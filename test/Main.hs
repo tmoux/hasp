@@ -3,12 +3,36 @@
 module Main (main) where
 
 import Control.Applicative
+import Data.Maybe
 import qualified Hasp.Hoas as H
 import Hasp.Parser
 import Hasp.Types
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Ingredients.Rerun
+
+data Sexp = Sym Char | SSeq [Sexp]
+  deriving (Show, Eq)
+
+letter :: H.Hoas Char
+letter = H.charset ['a' .. 'z']
+
+word :: H.Hoas [Char]
+word = H.star letter
+
+-- Parse a language of s-expressions
+sexp :: H.Hoas Sexp
+sexp = H.fix $
+  \p -> Sym <$> letter <|> SSeq <$> H.paren (H.star p)
+
+getRight :: Either a b -> b
+getRight (Left _) = error "got left"
+getRight (Right x) = x
+
+makeParser :: H.Hoas a -> Parser a
+makeParser = toParser . fromJust . typecheck . H.toTerm
+
+-- makeParser = toParser . getRight . runExcept . typecheck . toTerm
 
 main :: IO ()
 main = defaultMainWithRerun tests
@@ -20,25 +44,25 @@ parseB :: Grammar ctx Char d
 parseB = (Chr 'b', undefined)
 
 parseEps :: Parser ()
-parseEps = H.makeParser (H.eps ())
+parseEps = makeParser (H.eps ())
 
 parseParens :: Parser Char
-parseParens = H.makeParser (H.paren (H.chr 'c'))
+parseParens = makeParser (H.paren (H.chr 'c'))
 
 parseWord :: Parser [Char]
-parseWord = H.makeParser H.word
+parseWord = makeParser word
 
 parseAlt :: Parser Char
-parseAlt = H.makeParser (H.chr 'c' <|> H.chr 'd')
+parseAlt = makeParser (H.chr 'c' <|> H.chr 'd')
 
 parseStarParen :: Parser [Char]
-parseStarParen = H.makeParser $ H.star (H.paren $ H.chr 'c')
+parseStarParen = makeParser $ H.star (H.paren $ H.chr 'c')
 
 -- sexpCheck :: TCMonad (Grammar '[] H.Sexp Tp)
 -- sexpCheck = typecheck (H.toTerm H.sexp)
 
-parseSexp :: Parser H.Sexp
-parseSexp = H.makeParser H.sexp
+parseSexp :: Parser Sexp
+parseSexp = makeParser sexp
 
 tests :: TestTree
 tests =
@@ -57,7 +81,8 @@ tests =
           testCase "hoas word" $ unP parseWord "abcd abc" @?= Just ("abcd", " abc"),
           testCase "hoas alt" $ unP parseAlt "cdc" @?= Just ('c', "dc"),
           testCase "hoas star parens" $ unP parseStarParen "(c)(c)(c)[]" @?= Just ("ccc", "[]"),
-          testCase "hoas sexp" $ unP parseSexp "(abc)" @?= Just (H.SSeq [H.Sym 'a', H.Sym 'b', H.Sym 'c'], "")
+          testCase "hoas sexp" $ unP parseSexp "(abc)" @?= Just (SSeq [Sym 'a', Sym 'b', Sym 'c'], ""),
+          testCase "hoas sexp 2" $ unP parseSexp "(a(b(f)c))" @?= Just (SSeq [Sym 'a', SSeq [Sym 'b', SSeq [Sym 'f'], Sym 'c']], "")
         ],
       testGroup
         "type checking tests"

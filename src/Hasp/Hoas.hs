@@ -104,27 +104,6 @@ star :: Hoas a -> Hoas [a]
 star p = fix $
   \rest -> eps [] <|> (:) <$> p <*> rest
 
-data Sexp = Sym Char | SSeq [Sexp]
-  deriving (Show, Eq)
-
 charset :: [Char] -> Hoas Char
 charset l = any (chr <$> l)
 
-letter :: Hoas Char
-letter = charset ['a' .. 'z']
-
-word :: Hoas [Char]
-word = star letter
-
--- Parse a language of s-expressions
-sexp :: Hoas Sexp
-sexp = fix $
-  \p -> Sym <$> letter <|> SSeq <$> paren (star p)
-
-getRight :: Either a b -> b
-getRight (Left _) = error "got left"
-getRight (Right x) = x
-
-makeParser :: Hoas a -> Parser a
-makeParser = toParser . fromJust . typecheck . toTerm
--- makeParser = toParser . getRight . runExcept . typecheck . toTerm
