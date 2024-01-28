@@ -14,7 +14,7 @@ module Hasp.Hoas where
 import Control.Applicative
 import Control.Monad.Except hiding (fix)
 import Hasp.Ctx (Ctx (..), tshift)
-import Hasp.Parser (Grammar, Grammar' (..))
+import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (any, map, seq)
 
 {-
@@ -51,7 +51,9 @@ instance Alternative Hoas where
   empty = bot
   (<|>) = alt
 
--- Is G a monad? Don't think so, since our seq can't have the second parser depend on the output of the first.
+-- Hoas is not a monad, as we need to be able to statically determine whether the grammar is ambiguous.
+-- Thus we can't implement monadic bind, where the second parser depends on the output of the first.
+-- See https://stackoverflow.com/questions/7861903/
 
 mkG :: (forall ctx. Ctx ctx -> Grammar' ctx a ()) -> Hoas a
 mkG v = H $ \i -> (v i, ())
@@ -82,24 +84,3 @@ fix f = mkG $ \i ->
 
 toTerm :: Hoas a -> Grammar '[] a ()
 toTerm t = unH t CtxZ
-
-
--- Parse a sequence of c's and return the length
-parseList :: Char -> Hoas Int
-parseList c = fix $
-  \p -> eps 0 <|> ((+ 1) <$> (chr c *> p))
-
--- Parse with parentheses
-paren :: Hoas a -> Hoas a
-paren p = chr '(' *> p <* chr ')'
-
-any :: [Hoas a] -> Hoas a
-any = asum
-
--- Yay operators are fun...
-star :: Hoas a -> Hoas [a]
-star p = fix $
-  \rest -> eps [] <|> (:) <$> p <*> rest
-
-charset :: [Char] -> Hoas Char
-charset l = any (chr <$> l)

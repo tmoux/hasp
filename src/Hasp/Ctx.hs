@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -32,6 +33,20 @@ tshift' n (CtxS c1) c2 = IndexS (tshift' (n - 1) c1 c2)
 tshift :: Ctx j -> Ctx (a ': i) -> Index j a
 tshift c1 c2 = tshift' (len c1 - len c2) c1 c2
 
+-- I had to add a f parameter, so Hlist f [a, b, c] represents list of types [f a, f b, f c]
+
+data HList :: (Type -> Type) -> [Type] -> Type where
+  HNil :: HList f '[]
+  HCons :: f a -> HList f xs -> HList f (a ': xs)
+
+hlookup :: Index ctx a -> HList f ctx -> f a
+hlookup IndexZ (HCons x _) = x
+hlookup (IndexS v) (HCons _ xs) = hlookup v xs
+
+hmap :: (forall a. f a -> f a) -> HList f ctx -> HList f ctx
+hmap _ HNil = HNil
+hmap f (HCons x xs) = HCons (f x) (hmap f xs)
+
 -- This stuff below isn't used
 
 data Nat = Zero | Succ Nat
@@ -52,6 +67,6 @@ vlookup :: Fin n -> Vec a n -> a
 vlookup FinZ (VCons x _) = x
 vlookup (FinS n) (VCons _ xs) = vlookup n xs
 
-homl :: CtxLength ctx ~ n => Index ctx b -> Vec a n -> a
+homl :: (CtxLength ctx ~ n) => Index ctx b -> Vec a n -> a
 homl IndexZ (VCons x _) = x
 homl (IndexS i) (VCons _ xs) = homl i xs
