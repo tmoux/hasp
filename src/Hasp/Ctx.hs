@@ -23,6 +23,7 @@ len :: Ctx n -> Int
 len CtxZ = 0
 len (CtxS ctx) = 1 + len ctx
 
+-- See https://homepages.inf.ed.ac.uk/slindley/papers/unembedding.pdf
 tshift' :: Int -> Ctx j -> Ctx (a ': i) -> Index j a
 tshift' _ CtxZ _ = error "impossible"
 tshift' 0 (CtxS _) (CtxS _) = unsafeCoerce IndexZ
@@ -30,6 +31,8 @@ tshift' n (CtxS c1) c2 = IndexS (tshift' (n - 1) c1 c2)
 
 tshift :: Ctx j -> Ctx (a ': i) -> Index j a
 tshift c1 c2 = tshift' (len c1 - len c2) c1 c2
+
+-- This stuff below isn't used
 
 data Nat = Zero | Succ Nat
 

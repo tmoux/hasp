@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
@@ -7,18 +8,17 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Hasp.Parser where
 
+import Control.Monad.Except
 import Data.Functor.Const
 import Data.Kind (Type)
 import qualified Data.Set as S
-import Debug.Trace
 import Hasp.Ctx
 import Hasp.Types
 import Prelude hiding (null, seq)
-import Control.Monad.Except
+import Text.Printf
 
 -- TODO: generalize Char type to arbitrary token
 data Grammar' :: [Type] -> Type -> Type -> Type where
@@ -36,9 +36,12 @@ type Grammar ctx a d = (Grammar' ctx a d, d)
 makeAllGuarded :: HList (Const Tp) ctx -> HList (Const Tp) ctx
 makeAllGuarded = hmap (\(Const x) -> Const $ makeGuarded x)
 
-
 type Err = String
-type TCMonad = Maybe -- Except String
+
+type TCMonad = Except String
+
+check :: Bool -> String -> TCMonad ()
+check b err = unless b $ throwError err
 
 typeof :: HList (Const Tp) ctx -> Grammar ctx a d -> TCMonad (Grammar ctx a Tp)
 typeof env (grammar, _) = case grammar of
@@ -46,30 +49,26 @@ typeof env (grammar, _) = case grammar of
   Seq a b -> do
     a'@(_, ta) <- typeof env a
     b'@(_, tb) <- typeof (makeAllGuarded env) b
-    guard (separable ta tb) -- TODO: change Maybe to Except for proper error messages
+    check (separable ta tb) (printf "Not separable: %s %s" (show ta) (show tb))
     return (Seq a' b', tConcat ta tb)
   Chr c -> return (Chr c, tChar c)
   Bot -> return (Bot, tBot)
   Alt a b -> do
     a'@(_, ta) <- typeof env a
     b'@(_, tb) <- typeof env b
-    -- traceM $ "type left: " ++ show ta
-    -- traceM $ "type right: " ++ show tb
-    guard (apart ta tb)
+    check (apart ta tb) (printf "Not apart: %s %s" (show ta) (show tb))
     return (Alt a' b', tDisj ta tb)
   Map f a -> do
     a'@(_, t) <- typeof env a
     return (Map f a', t)
   Fix g -> do
     t <- fixpoint (\tp -> snd <$> typeof (HCons (Const tp) env) g)
-    -- traceM $ "fixpoint: " ++ show t
-    guard t.guarded
+    check t.guarded (printf "Not guarded: %s" (show t))
     g'@(_, t') <- typeof (HCons (Const t) env) g
     return (Fix g', t')
   Var x -> do
     let (Const t) = hlookup x env
     -- Note: don't check if variable is guarded here.
-    -- guard (not t.guarded) 
     return (Var x, t)
 
 typecheck :: Grammar '[] a d -> TCMonad (Grammar '[] a Tp)

@@ -14,9 +14,8 @@ module Hasp.Hoas where
 import Control.Applicative
 import Control.Monad.Except hiding (fix)
 import Hasp.Ctx (Ctx (..), tshift)
-import Hasp.Parser (Grammar, Grammar' (..), Parser, toParser, typecheck)
+import Hasp.Parser (Grammar, Grammar' (..))
 import Prelude hiding (any, map, seq)
-import Data.Maybe
 
 {-
   Idea: express combinators as a typeclass
@@ -84,8 +83,6 @@ fix f = mkG $ \i ->
 toTerm :: Hoas a -> Grammar '[] a ()
 toTerm t = unH t CtxZ
 
-parseC :: Hoas Char
-parseC = chr 'c'
 
 -- Parse a sequence of c's and return the length
 parseList :: Char -> Hoas Int
@@ -106,4 +103,3 @@ star p = fix $
 
 charset :: [Char] -> Hoas Char
 charset l = any (chr <$> l)
-

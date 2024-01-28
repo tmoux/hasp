@@ -133,7 +133,9 @@ test-suite hasp-test
   -- Test dependencies.
   build-depends:
     , base         ^>=4.17.2.0
+    , containers
     , hasp
+    , mtl
     , tasty
     , tasty-hunit
     , tasty-rerun
