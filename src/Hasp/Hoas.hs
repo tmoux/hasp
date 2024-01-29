@@ -64,8 +64,8 @@ eps a = mkG $ \_ -> Eps a
 seq :: Hoas a -> Hoas b -> Hoas (a, b)
 seq (H a) (H b) = mkG $ \i -> Seq (a i) (b i)
 
-chr :: Char -> Hoas Char
-chr c = mkG $ \_ -> Chr c
+char :: Char -> Hoas Char
+char c = mkG $ \_ -> Chr c
 
 bot :: Hoas a
 bot = mkG $ \_ -> Bot

@@ -4,7 +4,6 @@ module Hasp.Types where
 
 import qualified Data.Set as S
 import Prelude hiding (null)
-import Debug.Trace (traceM)
 
 data Tp = Tp
   { null :: Bool,
@@ -69,7 +68,6 @@ tStar t =
       guarded = t.guarded
     }
 
-
 tMin :: Tp
 tMin = Tp {null = False, first = S.empty, flast = S.empty, guarded = False}
 
@@ -77,7 +75,6 @@ fixpoint :: (Monad m) => (Tp -> m Tp) -> m Tp
 fixpoint f = go tMin
   where
     go t = do
-      -- traceM ("go " ++ show t)
       t' <- f t
       if t == t'
         then return t

@@ -6,20 +6,21 @@
 module Hasp.Typecheck where
 
 import Control.Monad.Except
+import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Const
-import Hasp.Ctx
+import Hasp.Ctx (HList (..), hlookup, hmap)
 import Hasp.Grammar
 import Hasp.Types
 import Text.Printf (printf)
 
 makeAllGuarded :: HList (Const Tp) ctx -> HList (Const Tp) ctx
-makeAllGuarded = hmap (\(Const x) -> Const $ makeGuarded x)
+makeAllGuarded = hmap (Bifunctor.first makeGuarded)
 
 type Err = String
 
 type TCMonad = Except Err
 
-check :: Bool -> String -> TCMonad ()
+check :: Bool -> Err -> TCMonad ()
 check b err = unless b $ throwError err
 
 typeof :: HList (Const Tp) ctx -> Grammar ctx a d -> TCMonad (Grammar ctx a Tp)

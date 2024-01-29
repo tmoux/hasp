@@ -1,14 +1,10 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE RankNTypes #-}
 
-module Hasp.Parser (toParser, Parser (..)) where
+module Hasp.Parser (toParser, Parser (..), parse) where
 
 import Control.Monad.Except
 import qualified Data.Set as S
@@ -20,6 +16,9 @@ import Prelude hiding (null, seq)
 -- TODO: change Maybe to a more informative error type
 newtype Parser a = P {unP :: [Char] -> Maybe (a, [Char])}
   deriving (Functor)
+
+parse :: Parser a -> [Char] -> Maybe (a, [Char])
+parse = unP
 
 instance Applicative Parser where
   pure a = P (\s -> pure (a, s))
@@ -62,24 +61,24 @@ alt t1 p1 t2 p2 =
               _ : _ | otherwise -> Nothing
     )
 
-parse :: Grammar ctx a Tp -> HList Parser ctx -> Parser a
-parse o@(gr, _) env = case gr of
+toParser' :: Grammar ctx a Tp -> HList Parser ctx -> Parser a
+toParser' o@(gr, _) env = case gr of
   (Eps v) -> eps v
   (Seq g1 g2) -> seq p1 p2
     where
-      p1 = parse g1 env
-      p2 = parse g2 env
+      p1 = toParser' g1 env
+      p2 = toParser' g2 env
   (Chr c) -> chr c
   Bot -> bot
   (Alt g1 g2) -> alt (snd g1) p1 (snd g2) p2
     where
-      p1 = parse g1 env
-      p2 = parse g2 env
-  (Map f x) -> f <$> parse x env
-  (Fix g) -> parse g (HCons p env)
+      p1 = toParser' g1 env
+      p2 = toParser' g2 env
+  (Map f x) -> f <$> toParser' x env
+  (Fix g) -> toParser' g (HCons p env)
     where
-      p = parse o env
+      p = toParser' o env
   (Var v) -> hlookup v env
 
 toParser :: Grammar '[] a Tp -> Parser a
-toParser g = parse g HNil
+toParser g = toParser' g HNil
