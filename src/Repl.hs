@@ -1,11 +1,17 @@
 module Repl where
 
-import Data.Maybe
-import Hasp.Hoas
-import Hasp.Parser ( typecheck )
-import Hasp.Types
+import Control.Monad.State
+import Text.Parsec hiding (State)
 
-t1 :: Tp
-t1 = snd $ fromJust . typecheck . toTerm $ letter
-t2 :: Tp
-t2 = snd $ fromJust . typecheck . toTerm $ star (paren (chr 'c'))
+type MyParser a = ParsecT String () (State Int) a
+
+charParser :: MyParser Char
+charParser = do
+  currentState <- lift get
+  charValue <- anyChar
+  when (currentState > 5) $ parserFail "too long"
+  lift (modify (+ 1))
+  return charValue
+
+parseAndCount :: String -> (Either ParseError [Char], Int)
+parseAndCount input = runState (runParserT (many charParser) () "" input) 0

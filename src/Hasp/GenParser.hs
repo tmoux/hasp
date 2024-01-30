@@ -1,86 +1,76 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 
-module Hasp.GenParser (toParser, Parser (..), parse) where
+module Hasp.GenParser where
 
 import Control.Monad.Except
+import Data.Functor.Identity (Identity (..))
 import qualified Data.Set as S
 import Hasp.Ctx
-import Hasp.Grammar
-import Hasp.Types
-import Text.Parsec (Stream, uncons)
+import Hasp.GenGrammar
+import Hasp.GenTypes
+import qualified Text.Parsec as Parsec
 import Prelude hiding (null, seq)
 
-newtype ParserT s m a = P' {unP' :: s -> m (Maybe (a, s))}
+newtype Parser s a = P {unP :: s -> Maybe (a, s)}
   deriving (Functor)
 
-parse :: (Stream s m t) => ParserT s m a -> s -> m (Maybe (a, s))
-parse = unP'
+type Stream s t = Parsec.Stream s Identity t
 
--- TODO: change Maybe to a more informative error type
-newtype Parser a = P {unP :: [Char] -> Maybe (a, [Char])}
-  deriving (Functor)
+uncons :: (Stream s t) => s -> Maybe (t, s)
+uncons = runIdentity . Parsec.uncons
 
-instance (Monad m) => Applicative (ParserT s m) where
-  pure a = P' (\s -> pure $ pure (a, s))
-  (<*>) = ap
+parse :: (Stream s t) => Parser s a -> s -> Maybe (a, s)
+parse = unP
 
-instance (Monad m) => Monad (ParserT s m) where
-  (P' p) >>= f =
-    P'
-      ( p
-          >=> ( \case
-                  Nothing -> return Nothing
-                  Just (a, s') -> unP' (f a) s'
-              )
-      )
-
-instance Applicative Parser where
+instance Applicative (Parser s) where
   pure a = P (\s -> pure (a, s))
   (<*>) = ap
 
-instance Monad Parser where
+instance Monad (Parser s) where
   (P p) >>= f = P (p >=> (\(v, s') -> unP (f v) s'))
 
-eps :: a -> ParserT s m a
+eps :: a -> Parser s a
 eps = pure
 
-seq :: ParserT s m a -> ParserT s m b -> ParserT s m (a, b)
+seq :: Parser s a -> Parser s b -> Parser s (a, b)
 seq p1 p2 = (,) <$> p1 <*> p2
 
-chr :: (Stream s m t) => t -> ParserT s m t
+chr :: (Eq t, Stream s t) => t -> Parser s t
 chr c =
-  P'
-    ( \s -> do
-        uncons s >>= \case
-          Just (t, rest) | t == c -> return $ return (c, rest)
-          _ -> return Nothing
+  P
+    ( \s ->
+        case uncons s of
+          Just (t, rest) | t == c -> return (c, rest)
+          _ -> Nothing
     )
 
-bot :: ParserT s m a
-bot = P' (const $ return Nothing)
+bot :: Parser s a
+bot = P (const Nothing)
 
-alt :: Tp -> Parser a -> Tp -> Parser a -> Parser a
+alt :: (Stream s t, Ord t) => Tp t -> Parser s a -> Tp t -> Parser s a -> Parser s a
 alt t1 p1 t2 p2 =
   P
     ( \s ->
         let r1 = unP p1 s
             r2 = unP p2 s
-         in case s of
-              [] | t1.null -> r1
-              [] | t2.null -> r2
-              [] | otherwise -> Nothing
-              c : _ | S.member c t1.first -> r1
-              c : _ | S.member c t2.first -> r2
-              _ : _ | t1.null -> r1
-              _ : _ | t2.null -> r2
-              _ : _ | otherwise -> Nothing
+         in case uncons s of
+              Nothing | t1.null -> r1
+              Nothing | t2.null -> r2
+              Nothing | otherwise -> Nothing
+              Just (c, _)
+                | S.member c t1.first -> r1
+                | S.member c t2.first -> r2
+                | t1.null -> r1
+                | t2.null -> r2
+                | otherwise -> Nothing
     )
 
-toParser' :: Grammar ctx a Tp -> HList Parser ctx -> Parser a
+toParser' :: (Stream s t, Ord t) => Grammar ctx a t (Tp t) -> HList (Parser s) ctx -> Parser s a
 toParser' o@(gr, _) env = case gr of
   (Eps v) -> eps v
   (Seq g1 g2) -> seq p1 p2
@@ -99,5 +89,5 @@ toParser' o@(gr, _) env = case gr of
       p = toParser' o env
   (Var v) -> hlookup v env
 
-toParser :: Grammar '[] a Tp -> Parser a
+toParser :: (Stream s t, Ord t) => Grammar '[] a t (Tp t) -> Parser s a
 toParser g = toParser' g HNil
