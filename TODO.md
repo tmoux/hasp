@@ -2,7 +2,7 @@
 - Improve parsing errors
 - Add more combinators
 - Do benchmarks with parsec, other parsing libraries
-- General cleanup
+- Generalize to Stream class used in Parsec?
 
 ### Eventually:
 - Add staging with TH

@@ -33,8 +33,6 @@ tshift' n (CtxS c1) c2 = IndexS (tshift' (n - 1) c1 c2)
 tshift :: Ctx j -> Ctx (a ': i) -> Index j a
 tshift c1 c2 = tshift' (len c1 - len c2) c1 c2
 
--- I had to add a f parameter, so Hlist f [a, b, c] represents list of types [f a, f b, f c]
-
 data HList :: (Type -> Type) -> [Type] -> Type where
   HNil :: HList f '[]
   HCons :: f a -> HList f xs -> HList f (a ': xs)
@@ -47,7 +45,7 @@ hmap :: (forall a. f a -> f a) -> HList f ctx -> HList f ctx
 hmap _ HNil = HNil
 hmap f (HCons x xs) = HCons (f x) (hmap f xs)
 
--- This stuff below isn't used
+-- This stuff below isn't used:
 
 data Nat = Zero | Succ Nat
 

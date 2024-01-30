@@ -15,6 +15,7 @@ import Control.Applicative
 import Control.Monad.Except hiding (fix)
 import Hasp.Ctx (Ctx (..), tshift)
 import Hasp.Grammar (Grammar, Grammar' (..))
+import Text.Parsec (Stream (..))
 import Prelude hiding (any, map, seq)
 
 {-
@@ -36,6 +37,7 @@ import Prelude hiding (any, map, seq)
 
 -- instance (ParsingGrammar e) => Functor e where
 --   fmap = e
+-- newtype Hoas' s m a = H {unH :: forall ctx. Ctx ctx -> Grammar ctx s m a ()}
 
 newtype Hoas a = H {unH :: forall ctx. Ctx ctx -> Grammar ctx a ()}
 

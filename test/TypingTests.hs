@@ -27,8 +27,8 @@ tests :: TestTree
 tests =
   testGroup
     "Typechecking tests"
-    [ testCase "fixpoint" $ checkIllTyped hBadFixpoint,
-      testCase "disjunction" $ checkIllTyped hBadDisj,
+    [ testCase "bad fixpoint" $ checkIllTyped hBadFixpoint,
+      testCase "bad disjunction" $ checkIllTyped hBadDisj,
       testCase "sexp" $
         checkType
           sexp

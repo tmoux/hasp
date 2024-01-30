@@ -79,6 +79,7 @@ library
     , base        ^>=4.17.2.0
     , containers
     , mtl
+    , parsec
 
   -- Directories containing source files.
   hs-source-dirs:   src
