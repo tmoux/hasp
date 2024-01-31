@@ -13,6 +13,6 @@ The main difference is that recursive parsers are defined with the fixpoint oper
 
 
 
-Note that while `Hoas t` is an Alternative Applicative, as all proper parser combinators should be, it is not a monad, and for good reason: implementing monadic bind would prevent us from performing the static analysis that allows to have such unambiguity guarantees.
+Note that while `Hoas t` is an Alternative Applicative, like any good parser combinator should be, it is not a monad, and for good reason: implementing monadic bind would prevent us from performing the static analysis that allows to have such unambiguity guarantees.
 
 ## Implementation details

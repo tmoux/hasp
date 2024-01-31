@@ -66,6 +66,7 @@ library
     Hasp.Grammar
     Hasp.Hoas
     Hasp.Parser
+    Hasp.TH
     Hasp.Typecheck
     Hasp.Types
 
@@ -77,10 +78,11 @@ library
 
   -- Other library packages from which modules are imported.
   build-depends:
-    , base        ^>=4.17.2.0
+    , base              ^>=4.17.2.0
     , containers
     , mtl
     , parsec
+    , template-haskell
 
   -- Directories containing source files.
   hs-source-dirs:   src
@@ -121,6 +123,7 @@ test-suite test
 
   -- Modules included in this executable, other than Main.
   other-modules:
+    CheckParsers
     Parsers
     ParsingTests
     TypingTests
@@ -176,3 +179,4 @@ test-suite bench
     , criterion
     , hasp
     , mtl
+    , parsec

@@ -1,12 +1,17 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Hasp.Grammar where
 
 import Data.Kind (Type)
 import Hasp.Ctx
+import Language.Haskell.TH.Syntax hiding (Type)
 
 data Grammar' :: [Type] -> Type -> Type -> Type -> Type where
   Eps :: a -> Grammar' ctx a t d
@@ -19,3 +24,4 @@ data Grammar' :: [Type] -> Type -> Type -> Type -> Type where
   Var :: Index ctx a -> Grammar' ctx a t d
 
 type Grammar ctx a t d = (Grammar' ctx a t d, d)
+

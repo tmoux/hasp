@@ -19,6 +19,7 @@ import Prelude hiding (null, seq)
 newtype Parser s a = P {unP :: s -> Maybe (a, s)}
   deriving (Functor)
 
+
 type Stream s t = Parsec.Stream s Identity t
 
 uncons :: (Stream s t) => s -> Maybe (t, s)
