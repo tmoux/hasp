@@ -1,19 +1,14 @@
 module Hasp.Combinators where
 
-import Control.Applicative
+import Control.Applicative hiding ((<|>))
 import Hasp.Hoas
 import Prelude hiding (seq)
-
- -- TODO: Reorganize Char parsers into separate folders
 
 option :: Hoas t a -> Hoas t (Maybe a)
 option p = Just <$> p <|> eps Nothing
 
 between :: Hoas t a -> Hoas t b -> Hoas t c -> Hoas t c
 between open close p = open *> p <* close
-
-paren :: Hoas Char a -> Hoas Char a
-paren = between (char '(') (char ')')
 
 star :: Hoas t a -> Hoas t [a]
 star p = fix $
@@ -38,9 +33,6 @@ many = star
 many1 :: Hoas t a -> Hoas t [a]
 many1 p = (:) <$> p <*> star p
 
--- TODO: this is probably inefficient
-digit :: Hoas Char Int
-digit = read . return <$> charset ['0' .. '9']
 
 chainr1 :: Hoas t a -> Hoas t (a -> a -> a) -> Hoas t a
 chainr1 a op = fix $

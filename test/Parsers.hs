@@ -1,6 +1,6 @@
 module Parsers where
 
-import Control.Applicative
+import Hasp.Char
 import Hasp.Combinators
 import Hasp.Hoas
 

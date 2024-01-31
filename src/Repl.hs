@@ -15,3 +15,6 @@ charParser = do
 
 parseAndCount :: String -> (Either ParseError [Char], Int)
 parseAndCount input = runState (runParserT (many charParser) () "" input) 0
+
+parserC :: Parsec String () Char
+parserC = char 'c' <* char 'd'

@@ -85,3 +85,8 @@ fix f = mkG $ \i ->
 
 toTerm :: Hoas t a -> Grammar '[] a t ()
 toTerm t = unH t CtxZ
+
+(<|>) :: Hoas t a -> Hoas t a -> Hoas t a
+(<|>) = alt
+
+infixl 1 <|>
