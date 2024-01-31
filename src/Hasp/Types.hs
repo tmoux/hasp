@@ -5,36 +5,36 @@ module Hasp.Types where
 import qualified Data.Set as S
 import Prelude hiding (null)
 
-data Tp = Tp
+data Tp t = Tp
   { null :: Bool,
-    first :: S.Set Char,
-    flast :: S.Set Char,
+    first :: S.Set t,
+    flast :: S.Set t,
     guarded :: Bool
   }
   deriving (Show, Eq)
 
-makeGuarded :: Tp -> Tp
+makeGuarded :: (Ord t) => Tp t -> Tp t
 makeGuarded t = t {guarded = True}
 
 -- Separability predicate: is L1 * L2 unambiguous?
-separable :: Tp -> Tp -> Bool
+separable :: (Ord t) => Tp t -> Tp t -> Bool
 separable t1 t2 = S.null (S.intersection t1.flast t2.first) && not t1.null
 
 -- Apartness predicate: is L1 v L2 unambiguous?
-apart :: Tp -> Tp -> Bool
+apart :: (Ord t) => Tp t -> Tp t -> Bool
 apart t1 t2 = S.null (S.intersection t1.first t2.first) && not (t1.null && t2.null)
 
-tBot :: Tp
+tBot :: Tp t
 tBot = Tp {null = False, first = S.empty, flast = S.empty, guarded = True}
 
-tEps :: Tp
+tEps :: Tp t
 tEps = Tp {null = True, first = S.empty, flast = S.empty, guarded = True}
 
-tChar :: Char -> Tp
+tChar :: t -> Tp t
 tChar c = Tp {null = False, first = S.singleton c, flast = S.empty, guarded = True}
 
 -- Assumes t1 and t2 are apart
-tDisj :: Tp -> Tp -> Tp
+tDisj :: (Ord t) => Tp t -> Tp t -> Tp t
 tDisj t1 t2 =
   Tp
     { null = t1.null || t2.null,
@@ -43,11 +43,11 @@ tDisj t1 t2 =
       guarded = t1.guarded && t2.guarded
     }
 
-ifb :: Bool -> S.Set Char -> S.Set Char
+ifb :: Bool -> S.Set t -> S.Set t
 ifb b s = if b then s else S.empty
 
 -- Assumes t1 and t2 are separable
-tConcat :: Tp -> Tp -> Tp
+tConcat :: (Ord t) => Tp t -> Tp t -> Tp t
 tConcat t1 t2
   | t1 == tBot = tBot
   | t2 == tBot = tBot
@@ -59,7 +59,7 @@ tConcat t1 t2
           guarded = t1.guarded
         }
 
-tStar :: Tp -> Tp
+tStar :: (Ord t) => Tp t -> Tp t
 tStar t =
   Tp
     { null = True,
@@ -68,10 +68,10 @@ tStar t =
       guarded = t.guarded
     }
 
-tMin :: Tp
+tMin :: Tp t
 tMin = Tp {null = False, first = S.empty, flast = S.empty, guarded = False}
 
-fixpoint :: (Monad m) => (Tp -> m Tp) -> m Tp
+fixpoint :: (Monad m, Eq t) => (Tp t -> m (Tp t)) -> m (Tp t)
 fixpoint f = go tMin
   where
     go t = do

@@ -1,6 +1,8 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# HLINT ignore "Redundant bracket" #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Redundant bracket" #-}
 module ParsingTests where
 
 import Control.Monad.Except (runExcept)
@@ -12,10 +14,10 @@ import Parsers
 import Test.Tasty
 import Test.Tasty.HUnit
 
-makeParser :: Hoas a -> TCMonad (Parser a)
+makeParser :: (Stream s t, Show t, Ord t) => Hoas t a -> TCMonad (Parser s a)
 makeParser p = toParser <$> typecheck (toTerm p)
 
-checkParser :: (Show a, Eq a) => Hoas a -> [Char] -> a -> [Char] -> Assertion
+checkParser :: (Stream s t, Show s, Eq s, Show a, Eq a, Show t, Ord t) => Hoas t a -> s -> a -> s -> Assertion
 checkParser parser input output rest =
   case runExcept (makeParser parser) of
     Left err -> error err

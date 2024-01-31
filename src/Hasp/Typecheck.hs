@@ -13,7 +13,7 @@ import Hasp.Grammar
 import Hasp.Types
 import Text.Printf (printf)
 
-makeAllGuarded :: HList (Const Tp) ctx -> HList (Const Tp) ctx
+makeAllGuarded :: (Ord t) => HList (Const (Tp t)) ctx -> HList (Const (Tp t)) ctx
 makeAllGuarded = hmap (Bifunctor.first makeGuarded)
 
 type Err = String
@@ -23,7 +23,7 @@ type TCMonad = Except Err
 check :: Bool -> Err -> TCMonad ()
 check b err = unless b $ throwError err
 
-typeof :: HList (Const Tp) ctx -> Grammar ctx a d -> TCMonad (Grammar ctx a Tp)
+typeof :: (Show t, Ord t) => HList (Const (Tp t)) ctx -> Grammar ctx a t d -> TCMonad (Grammar ctx a t (Tp t))
 typeof env (grammar, _) = case grammar of
   Eps a -> return (Eps a, tEps)
   Seq a b -> do
@@ -51,5 +51,5 @@ typeof env (grammar, _) = case grammar of
     -- Note: don't check if variable is guarded here.
     return (Var x, t)
 
-typecheck :: Grammar '[] a d -> TCMonad (Grammar '[] a Tp)
+typecheck :: (Show t, Ord t) => Grammar '[] a t d -> TCMonad (Grammar '[] a t (Tp t))
 typecheck = typeof HNil

@@ -11,13 +11,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Prelude hiding (null)
 
-checkIllTyped :: Hoas a -> Assertion
+checkIllTyped :: (Show t, Ord t) => Hoas t a -> Assertion
 checkIllTyped parser =
   assertBool "should not typecheck" (isLeft p)
   where
     p = runExcept (snd <$> typecheck (toTerm parser))
 
-checkType :: Hoas a -> Tp -> Assertion
+checkType :: (Show t, Ord t) => Hoas t a -> Tp t -> Assertion
 checkType parser tp =
   case runExcept (snd <$> typecheck (toTerm parser)) of
     Left err -> error err
