@@ -13,7 +13,6 @@ import Hasp.Combinators
 import Hasp.Hoas
 import Hasp.Parser (Parser (..), Stream, parse, toParser)
 import Hasp.Typecheck
-import Hasp.Types (Tp (..))
 import qualified Text.Parsec as Parsec
 
 data Token = LP | RP | Atom String
@@ -33,19 +32,13 @@ token = fix $ \p ->
         <|> Atom
         <$> ((:) <$> alpha <*> many alphaNum)
 
---- makeParser :: (Stream s t, Show t, Ord t) => Hoas t a -> (Parser s a)
+makeParser :: (Stream s t, Ord t, Show t) => Hoas t a -> TCMonad (Parser s a)
 makeParser p = toParser <$> typecheck (toTerm p)
 
+makeParse :: (Stream s t, Ord t, Show t) => Hoas t a -> Parser s a
 makeParse p = case runExcept (makeParser p) of
   Left err -> error err
   Right p' -> p'
-
-ltype p = case runExcept (typecheck (toTerm p)) of
-  Left err -> error err
-  Right t -> snd t
-
-lexerType :: Tp Char
-lexerType = ltype token
 
 lexerP :: Parser String Token
 lexerP = makeParse token
@@ -66,6 +59,12 @@ countParen = many (char LP)
 
 countParenP :: (Stream s Token) => Parser s [Token]
 countParenP = makeParse countParen
+
+parseSexp :: Hoas Token Int
+parseSexp = fix $ \p ->
+  between (char LP) (char RP) (length <$> many p)
+    <|> 1
+    <$ char (Atom "a")
 
 {-
 

@@ -17,6 +17,9 @@ import Test.Tasty.HUnit
 makeParser :: (Stream s t, Show t, Ord t) => Hoas t a -> TCMonad (Parser s a)
 makeParser p = toParser <$> typecheck (toTerm p)
 
+makeParser' :: (Stream s t, Show t, Ord t) => Hoas t a -> TCMonad (Parser s a)
+makeParser' p = toParser <$> typecheck (toTerm p)
+
 checkParser :: (Stream s t, Show s, Eq s, Show a, Eq a, Show t, Ord t) => Hoas t a -> s -> a -> s -> Assertion
 checkParser parser input output rest =
   case runExcept (makeParser parser) of

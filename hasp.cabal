@@ -67,6 +67,7 @@ library
     Hasp.Hoas
     Hasp.Parser
     Hasp.TH
+    Hasp.Token
     Hasp.Typecheck
     Hasp.Types
 

@@ -14,8 +14,8 @@ import Language.Haskell.TH
 data Checked a = Checked
 
 checkParser :: forall t a. (Show t, Ord t) => Hoas t a -> Code Q (Checked (Hoas t a))
-checkParser p = case runExcept (typecheck (toTerm p)) of
-  Left err -> error err
+checkParser p = case runExcept $ (typecheck . toTerm) p of
+  Left err -> Code $ fail err
   Right _ -> [||Checked||]
 
 -- makeParser p = case runExcept (toParser <$> typecheck (toTerm p) :: Except Err (Parser s a)) of

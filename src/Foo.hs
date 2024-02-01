@@ -1,8 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module Foo where
 
@@ -21,7 +20,6 @@ instance (Foo a, Foo b) => Foo (a, b) where
 -- instance (Foo c) => Foo (G c) where
 --   foo (G1 x) = foo x
 --   foo (G2 x y) = foo x && foo y
-
 
 -- test :: (Foo (a, b)) => (a, b) -> Bool
 -- test (x, _) = foo x
