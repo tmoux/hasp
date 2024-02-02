@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedRecordDot #-}
@@ -8,6 +9,7 @@ module Hasp.Typecheck where
 import Control.Monad.Except
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Const
+import Data.Some
 import Hasp.Ctx (HList (..), hlookup, hmap)
 import Hasp.Grammar
 import Hasp.Types
@@ -23,7 +25,7 @@ type TCMonad = Except Err
 check :: Bool -> Err -> TCMonad ()
 check b err = unless b $ throwError err
 
-typeof :: (Show t, Ord t) => HList (Const (Tp t)) ctx -> Grammar ctx a t d -> TCMonad (Grammar ctx a t (Tp t))
+typeof :: (Show (Some t), Ord (Some t)) => HList (Const (Tp (Some t))) ctx -> Grammar ctx a t d -> TCMonad (Grammar ctx a t (Tp (Some t)))
 typeof env (grammar, _) = case grammar of
   Eps a -> return (Eps a, tEps)
   Seq a b -> do
@@ -31,7 +33,7 @@ typeof env (grammar, _) = case grammar of
     b'@(_, tb) <- typeof (makeAllGuarded env) b
     check (separable ta tb) (printf "Not separable: %s %s" (show ta) (show tb))
     return (Seq a' b', tConcat ta tb)
-  Chr c -> return (Chr c, tChar c)
+  Chr c -> return (Chr c, tChar (mkSome c))
   Bot -> return (Bot, tBot)
   Alt a b -> do
     a'@(_, ta) <- typeof env a
@@ -51,5 +53,5 @@ typeof env (grammar, _) = case grammar of
     -- Note: don't check if variable is guarded here.
     return (Var x, t)
 
-typecheck :: (Show t, Ord t) => Grammar '[] a t d -> TCMonad (Grammar '[] a t (Tp t))
+typecheck :: (Show (Some t), Ord (Some t)) => Grammar '[] a t d -> TCMonad (Grammar '[] a t (Tp (Some t)))
 typecheck = typeof HNil

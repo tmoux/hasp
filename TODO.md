@@ -1,4 +1,4 @@
-- Update token parser
+- Update tokens?
 - Use TH to make typesafe parsers
   - Problem with instances for GADTs
   - Might have to update the Grammar to take in a quoted function

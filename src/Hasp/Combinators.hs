@@ -14,7 +14,7 @@ star :: Hoas t a -> Hoas t [a]
 star p = fix $
   \rest -> eps [] <|> (:) <$> p <*> rest
 
-charset :: [t] -> Hoas t t
+charset :: [t a] -> Hoas t a
 charset l = asum (char <$> l)
 
 -- TODO: Note order of fold

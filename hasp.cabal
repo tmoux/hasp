@@ -66,8 +66,8 @@ library
     Hasp.Grammar
     Hasp.Hoas
     Hasp.Parser
+    Hasp.Stream
     Hasp.TH
-    Hasp.Token
     Hasp.Typecheck
     Hasp.Types
 
@@ -83,6 +83,7 @@ library
     , containers
     , mtl
     , parsec
+    , some
     , template-haskell
 
   -- Directories containing source files.

@@ -65,7 +65,7 @@ eps a = mkG $ \_ -> Eps a
 seq :: Hoas t a -> Hoas t b -> Hoas t (a, b)
 seq (H a) (H b) = mkG $ \i -> Seq (a i) (b i)
 
-char :: t -> Hoas t t
+char :: t a -> Hoas t a
 char c = mkG $ \_ -> Chr c
 
 bot :: Hoas t a
