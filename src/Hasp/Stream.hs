@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Hasp.Stream where
 
 import Data.Data ((:~:) (..))
 import Data.GADT.Compare
+import Data.GADT.Show
 import Data.Some
 
 data Token t a = Token
@@ -22,6 +24,15 @@ class Stream s t | s -> t where
 -- A tag type for type c, where each value of c has its own tag.
 data Tag c a where
   Tag :: c -> Tag c c
+
+deriving instance (Show c) => Show (Tag c a)
+
+deriving instance (Eq c) => Eq (Tag c a)
+
+deriving instance (Ord c) => Ord (Tag c a)
+
+instance (Show c) => GShow (Tag c) where
+  gshowsPrec = defaultGshowsPrec
 
 instance (Eq c) => GEq (Tag c) where
   (Tag a) `geq` (Tag b)

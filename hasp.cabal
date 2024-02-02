@@ -148,6 +148,7 @@ test-suite test
     , containers
     , hasp
     , mtl
+    , some
     , tasty
     , tasty-hunit
     , tasty-rerun

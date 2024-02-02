@@ -33,7 +33,7 @@ typeof env (grammar, _) = case grammar of
     b'@(_, tb) <- typeof (makeAllGuarded env) b
     check (separable ta tb) (printf "Not separable: %s %s" (show ta) (show tb))
     return (Seq a' b', tConcat ta tb)
-  Chr c -> return (Chr c, tChar (mkSome c))
+  Tok c -> return (Tok c, tChar (mkSome c))
   Bot -> return (Bot, tBot)
   Alt a b -> do
     a'@(_, ta) <- typeof env a

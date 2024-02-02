@@ -7,41 +7,41 @@ import Hasp.Hoas
 data Sexp = Sym Char | SSeq [Sexp]
   deriving (Show, Eq)
 
-letter :: Hoas Char Char
-letter = charset ['a' .. 'z']
+letter :: Hoas CharTag Char
+letter = charset $ range 'a' 'z'
 
-word :: Hoas Char [Char]
+word :: Hoas CharTag [Char]
 word = star letter
 
-sexp :: Hoas Char Sexp
+sexp :: Hoas CharTag Sexp
 sexp = fix $
   \p -> Sym <$> letter <|> SSeq <$> paren (star p)
 
-hEps :: Hoas Char ()
+hEps :: Hoas CharTag ()
 hEps = eps ()
 
-hParens :: Hoas Char Char
+hParens :: Hoas CharTag Char
 hParens = paren (char 'c')
 
-hAlt :: Hoas Char Char
+hAlt :: Hoas CharTag Char
 hAlt = char 'c' <|> char 'd'
 
-hStarParen :: Hoas Char [Char]
+hStarParen :: Hoas CharTag [Char]
 hStarParen = star $ paren $ char 'c'
 
-hSexpChar :: Hoas Char (Sexp, Char)
+hSexpChar :: Hoas CharTag (Sexp, Char)
 hSexpChar = (,) <$> sexp <*> letter
 
-hMultiSexp :: Hoas Char [Sexp]
+hMultiSexp :: Hoas CharTag [Sexp]
 hMultiSexp = star sexp
 
-hBadFixpoint :: Hoas Char Char
+hBadFixpoint :: Hoas CharTag Char
 hBadFixpoint = fix (\p -> eps 'c' <|> p *> char 'c')
 
-hBadDisj :: Hoas Char Char
+hBadDisj :: Hoas CharTag Char
 hBadDisj = char 'c' <|> char 'c'
 
-hDyck :: Hoas Char Int
+hDyck :: Hoas CharTag Int
 hDyck = fix $ \p -> eps 0 <|> (\a b -> a + b + 1) <$> paren p <*> p
 
 data E
@@ -51,8 +51,8 @@ data E
 
 infixl 9 :+:
 
-hAddsR :: Hoas Char E
+hAddsR :: Hoas CharTag E
 hAddsR = chainr1 (C <$> digit) ((:+:) <$ char '+')
 
-hAddsL :: Hoas Char E
+hAddsL :: Hoas CharTag E
 hAddsL = chainl1 (C <$> digit) ((:+:) <$ char '+')

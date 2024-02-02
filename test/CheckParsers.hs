@@ -5,11 +5,12 @@
 
 module CheckParsers where
 
+import Hasp.Char
 import Hasp.Hoas
 import Hasp.TH
 import Parsers
 
-checkLetter :: Checked (Hoas Char Char)
+checkLetter :: Checked (Hoas CharTag Char)
 checkLetter = $$(checkParser letter)
 
 -- These declarations do not compile:

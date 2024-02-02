@@ -12,7 +12,7 @@ import Hasp.Ctx
 data Grammar' :: [Type] -> Type -> (Type -> Type) -> Type -> Type where
   Eps :: a -> Grammar' ctx a t d
   Seq :: Grammar ctx a t d -> Grammar ctx b t d -> Grammar' ctx (a, b) t d
-  Chr :: t a -> Grammar' ctx a t d
+  Tok :: t a -> Grammar' ctx a t d
   Bot :: Grammar' ctx a t d
   Alt :: Grammar ctx a t d -> Grammar ctx a t d -> Grammar' ctx a t d
   Map :: (a -> b) -> Grammar ctx a t d -> Grammar' ctx b t d

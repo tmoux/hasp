@@ -38,6 +38,7 @@ eps = pure
 seq :: Parser s a -> Parser s b -> Parser s (a, b)
 seq p1 p2 = (,) <$> p1 <*> p2
 
+-- TODO: rename this to tok
 chr :: (GEq t, Stream s t) => t a -> Parser s a
 chr c =
   P
@@ -77,7 +78,7 @@ toParser' o@(gr, _) env = case gr of
     where
       p1 = toParser' g1 env
       p2 = toParser' g2 env
-  (Chr c) -> chr c
+  (Tok c) -> chr c
   Bot -> bot
   (Alt g1 g2) -> alt (snd g1) p1 (snd g2) p2
     where
