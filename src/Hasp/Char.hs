@@ -2,21 +2,14 @@
 
 module Hasp.Char where
 
-import Data.Data ((:~:) (..))
-import Data.GADT.Compare
 import Hasp.Combinators
 import Hasp.Hoas
+import Hasp.Stream
 
-data CharTag c where
-  CharTag :: Char -> CharTag Char
-
-instance GEq CharTag where
-  (CharTag a) `geq` (CharTag b)
-    | a == b = Just Refl
-    | otherwise = Nothing
+type CharTag = Tag Char
 
 range :: Char -> Char -> [CharTag Char]
-range lo hi = CharTag <$> [lo .. hi]
+range lo hi = Tag <$> [lo .. hi]
 
 -- TODO: this is probably inefficient
 digit :: Hoas CharTag Int
@@ -29,8 +22,8 @@ alphaNum :: Hoas CharTag Char
 alphaNum = charset $ range 'a' 'z' ++ range 'A' 'Z' ++ range '0' '9'
 
 paren :: Hoas CharTag a -> Hoas CharTag a
-paren = between (char (CharTag '(')) (char (CharTag ')'))
+paren = between (char (Tag '(')) (char (Tag ')'))
 
 -- Note: we can't write a satisfy function that takes in an arbitrary predicate, so we can't reuse Data.Char.isSpace
 space :: Hoas CharTag Char
-space = charset $ CharTag <$> [' ', '\t', '\n', '\r', '\f', '\v']
+space = charset $ Tag <$> [' ', '\t', '\n', '\r', '\f', '\v']
