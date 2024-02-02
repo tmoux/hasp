@@ -24,7 +24,7 @@ import Hasp.Examples.Parsers (makeParser)
 -- Our parser will return the number of atoms in the s-expression.
 -- We will split up the parsing into a lexing and parsing phase.
 -- That is, instead of parsing a string directly, we will first write a parser that will parse the first token from the string, and use this to construct a new Stream type that outputs tokens.
--- (Alternatively, we could parse all the tokens first, put it in a list, and then parse that list, I'm not sure which is better performance-wise.)
+-- (Alternatively, we could parse all the tokens first, put it in a list, and then parse that list; I'm not sure which is better performance-wise.)
 -- Our language of s-expressions is E ::= Atom | ( E* )
 -- We thus have three different types of tokens, left parentheses, right parentheses, and atoms.
 -- Each token has an associated data type. "Keywords"/punctuation such as parentheses carry a unit, and Atoms carry a string. An Integer token would have an Int type, and so on.
@@ -40,6 +40,7 @@ data TTag a where
 deriveGShow ''TTag
 deriveGEq ''TTag
 deriveGCompare ''TTag
+
 
 -- Our parser will process a stream consisting of tokens indexed by CharTag (a tag for each possible Char) and will return Some (Token TTag), or a (Token TTag a) for some type a.
 -- It ignores whitespace and tokenizes alphanumeric strings and left/right parentheses.

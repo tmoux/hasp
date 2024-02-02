@@ -23,3 +23,5 @@ cabal.project.local~
 .ghc.environment.*
 .tasty-rerun-log
 .ghci
+*.html
+

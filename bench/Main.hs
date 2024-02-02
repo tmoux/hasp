@@ -1,5 +1,6 @@
 module Main where
 
+import Bench.Sexp
 import Criterion.Main
 
 -- The function we're benchmarking.
@@ -20,18 +21,19 @@ fib' x = fs !! x
 main :: IO ()
 main =
   defaultMain
-    [ bgroup
-        "fib"
-        [ bench "1" $ whnf fib 1,
-          bench "5" $ whnf fib 5,
-          bench "9" $ whnf fib 9,
-          bench "11" $ whnf fib 11
-        ],
-      bgroup
-        "fib'"
-        [ bench "1" $ whnf fib' 1,
-          bench "5" $ whnf fib' 5,
-          bench "9" $ whnf fib' 9,
-          bench "11" $ whnf fib' 11
-        ]
+    [ -- bgroup
+      --   "fib"
+      --   [ bench "1" $ whnf fib 1,
+      --     bench "5" $ whnf fib 5,
+      --     bench "9" $ whnf fib 9,
+      --     bench "11" $ whnf fib 11
+      --   ],
+      -- bgroup
+      --   "fib'"
+      --   [ bench "1" $ whnf fib' 1,
+      --     bench "5" $ whnf fib' 5,
+      --     bench "9" $ whnf fib' 9,
+      --     bench "11" $ whnf fib' 11
+      --   ],
+      sexpBench
     ]
