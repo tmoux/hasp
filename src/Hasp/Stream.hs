@@ -18,6 +18,7 @@ data Token t a = Token
 getTag :: Some (Token t) -> Some t
 getTag = mapSome tag
 
+-- TODO: do we need fundep?
 class Stream s t | s -> t where
   uncons :: s -> Maybe (Some (Token t), s)
 

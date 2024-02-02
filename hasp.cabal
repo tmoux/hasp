@@ -82,7 +82,6 @@ library
     , base              ^>=4.17.2.0
     , containers
     , mtl
-    , parsec
     , some
     , template-haskell
 
@@ -161,7 +160,7 @@ test-suite bench
   default-language: Haskell2010
 
   -- Modules included in this executable, other than Main.
-  other-modules:
+  other-modules:    Sexp
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -177,9 +176,11 @@ test-suite bench
 
   -- Test dependencies.
   build-depends:
-    , base        ^>=4.17.2.0
+    , base                    ^>=4.17.2.0
     , containers
     , criterion
+    , dependent-sum-template
     , hasp
     , mtl
     , parsec
+    , some

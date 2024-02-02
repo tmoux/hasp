@@ -1,74 +1,88 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Sexp where
 
 -- Parse s-expressions with alphanumeric atoms
 
 import Control.Monad.Except (runExcept)
-import Data.Functor.Identity
+import Data.GADT.Compare
+import Data.GADT.Compare.TH
+import Data.GADT.Show
+import Data.GADT.Show.TH
+import Data.Some
 import Hasp.Char
 import Hasp.Combinators
 import Hasp.Hoas
-import Hasp.Parser (Parser (..), Stream, parse, toParser)
+import Hasp.Parser (Parser (..), parse, toParser)
+import Hasp.Stream
 import Hasp.Typecheck
-import qualified Text.Parsec as Parsec
 
-data Token = LP | RP | Atom String
-  deriving (Show, Eq, Ord)
+data TTag a where
+  LP :: TTag ()
+  RP :: TTag ()
+  Atom :: TTag String
 
-token :: Hoas Char Token
+deriveGShow ''TTag
+deriveGEq ''TTag
+deriveGCompare ''TTag
+
+token :: Hoas CharTag (Some (Token TTag))
 token = fix $ \p ->
   choice
     [ parseTok,
       space *> p
     ]
   where
-    parseTok :: Hoas Char Token
+    parseTok :: Hoas CharTag (Some (Token TTag))
     parseTok =
-      (LP <$ char '(')
-        <|> (RP <$ char ')')
-        <|> Atom
-        <$> ((:) <$> alpha <*> many alphaNum)
+      choice
+        [ mkSome (Token LP ()) <$ char '(',
+          mkSome (Token RP ()) <$ char ')',
+          mkSome . Token Atom <$> ((:) <$> alpha <*> many alphaNum)
+        ]
 
-makeParser :: (Stream s t, Ord t, Show t) => Hoas t a -> TCMonad (Parser s a)
+-- TODO: move this to common library and use compile-time check
+makeParser :: (Stream s t, GCompare t, GShow t) => Hoas t a -> TCMonad (Parser s a)
 makeParser p = toParser <$> typecheck (toTerm p)
 
-makeParse :: (Stream s t, Ord t, Show t) => Hoas t a -> Parser s a
+makeParse :: (Stream s t, GCompare t, GShow t) => Hoas t a -> Parser s a
 makeParse p = case runExcept (makeParser p) of
   Left err -> error err
   Right p' -> p'
 
-lexerP :: Parser String Token
+lexerP :: Parser String (Some (Token TTag))
 lexerP = makeParse token
 
 -- A datatype representing streams s tokenizing to t
-data LexStream s t = Lex (s -> Maybe (t, s)) s
+data LexStream s t = Lex (s -> Maybe (Some t, s)) s
 
-makeStream :: String -> LexStream String Token
+makeStream :: String -> LexStream String (Token TTag)
 makeStream = Lex (parse lexerP)
 
-instance Parsec.Stream (LexStream s t) Identity t where
+instance Stream (LexStream s (Token t)) t where
   uncons (Lex f s) =
-    Identity $
-      f s >>= \(t, s') -> Just (t, Lex f s')
+    f s >>= \(t, s') -> Just (t, Lex f s')
 
-countParen :: Hoas Token [Token]
-countParen = many (char LP)
+countParen :: Hoas TTag [()]
+countParen = many (tok LP)
 
-countParenP :: (Stream s Token) => Parser s [Token]
+countParenP :: (Stream s TTag) => Parser s [()]
 countParenP = makeParse countParen
 
-parseSexp :: Hoas Token Int
+parseSexp :: Hoas TTag Int
 parseSexp = fix $ \p ->
-  between (char LP) (char RP) (length <$> many p)
-    <|> 1
-    <$ char (Atom "a")
+  choice
+    [ between (tok LP) (tok RP) (sum <$> many p),
+      1 <$ tok Atom
+    ]
 
-{-
+s1 :: LexStream String (Token TTag)
+s1 = makeStream "(a b c (d e f))"
 
--}
-
--- lexStream :: Stream s t -> Parser s t ->
--- lexStream token s = _
+countAtoms :: String -> Maybe Int
+countAtoms s = fst <$> parse (makeParse parseSexp) (makeStream s)
