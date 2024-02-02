@@ -29,8 +29,8 @@ checkType parser tp =
     Left err -> error err
     Right t -> t @?= tp
 
-tests :: TestTree
-tests =
+test_typechecking :: TestTree
+test_typechecking =
   testGroup
     "Typechecking tests"
     [ testCase "bad fixpoint" $ checkIllTyped hBadFixpoint,

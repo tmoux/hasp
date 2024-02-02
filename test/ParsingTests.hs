@@ -5,7 +5,6 @@
 
 module ParsingTests where
 
-import Control.Monad.Except (runExcept)
 import Data.GADT.Compare
 import Data.GADT.Show
 import Hasp.Char
@@ -13,25 +12,23 @@ import Hasp.Combinators
 import Hasp.Hoas
 import Hasp.Parser
 import Hasp.Stream
-import Hasp.Typecheck
 import Parsers
 import Test.Tasty
 import Test.Tasty.HUnit
 
-makeParser :: (Stream s t, GEq t, GShow t, GCompare t) => Hoas t a -> TCMonad (Parser s a)
-makeParser p = toParser <$> typecheck (toTerm p)
-
-makeParser' :: (Stream s t, GEq t, GShow t, GCompare t) => Hoas t a -> TCMonad (Parser s a)
-makeParser' p = toParser <$> typecheck (toTerm p)
-
-checkParser :: (Stream s t, GEq t, Show s, Eq s, Show a, Eq a, GShow t, GCompare t) => Hoas t a -> s -> a -> s -> Assertion
+checkParser ::
+  (Stream s t, GEq t, Show s, Eq s, Show a, Eq a, GShow t, GCompare t) =>
+  Hoas t a -> -- parser
+  s -> -- input
+  a -> -- expected output
+  s -> -- expect rest of the stream
+  Assertion
 checkParser parser input output rest =
-  case runExcept (makeParser parser) of
-    Left err -> error err
-    Right p -> parse p input @?= Just (output, rest)
+  let p = makeParser parser
+   in parse p input @?= Just (output, rest)
 
-tests :: TestTree
-tests =
+test_parsing :: TestTree
+test_parsing =
   testGroup
     "Parsing tests"
     [ testCase "eps" $ checkParser hEps "abc" () "abc",

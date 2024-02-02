@@ -125,8 +125,10 @@ test-suite test
   -- Modules included in this executable, other than Main.
   other-modules:
     CheckParsers
+    LexStream
     Parsers
     ParsingTests
+    Sexp
     TypingTests
 
   -- LANGUAGE extensions used by modules in this package.
@@ -143,12 +145,14 @@ test-suite test
 
   -- Test dependencies.
   build-depends:
-    , base         ^>=4.17.2.0
+    , base                    ^>=4.17.2.0
     , containers
+    , dependent-sum-template
     , hasp
     , mtl
     , some
     , tasty
+    , tasty-discover
     , tasty-hunit
     , tasty-rerun
 

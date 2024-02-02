@@ -1,6 +1,8 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Hasp.Stream where
@@ -49,3 +51,9 @@ instance (Ord c) => GCompare (Tag c) where
 instance Stream [c] (Tag c) where
   uncons [] = Nothing
   uncons (x : xs) = Just (mkSome $ Token (Tag x) x, xs)
+
+unconsList :: (Stream [c] (Tag c)) => [c] -> Maybe (c, [c])
+unconsList s =
+  uncons s >>= \(tok, rest) ->
+    withSome tok $ \case
+      Token (Tag _) d -> Just (d, rest)

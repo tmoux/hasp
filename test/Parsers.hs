@@ -1,8 +1,14 @@
 module Parsers where
 
+import Control.Monad.Except (runExcept)
+import Data.GADT.Compare
+import Data.GADT.Show
 import Hasp.Char
 import Hasp.Combinators
 import Hasp.Hoas
+import Hasp.Parser (Parser, toParser)
+import Hasp.Stream
+import Hasp.Typecheck (typecheck)
 
 data Sexp = Sym Char | SSeq [Sexp]
   deriving (Show, Eq)
@@ -56,3 +62,8 @@ hAddsR = chainr1 (C <$> digit) ((:+:) <$ char '+')
 
 hAddsL :: Hoas CharTag E
 hAddsL = chainl1 (C <$> digit) ((:+:) <$ char '+')
+
+makeParser :: (Stream s t, GEq t, GShow t, GCompare t) => Hoas t a -> Parser s a
+makeParser p = case runExcept $ toParser <$> typecheck (toTerm p) of
+  Left err -> error err
+  Right parser -> parser
