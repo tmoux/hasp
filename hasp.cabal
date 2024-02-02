@@ -63,6 +63,9 @@ library
     Hasp.Char
     Hasp.Combinators
     Hasp.Ctx
+    Hasp.Examples.LexStream
+    Hasp.Examples.Parsers
+    Hasp.Examples.Sexp
     Hasp.Grammar
     Hasp.Hoas
     Hasp.Parser
@@ -79,8 +82,9 @@ library
 
   -- Other library packages from which modules are imported.
   build-depends:
-    , base              ^>=4.17.2.0
+    , base                    ^>=4.17.2.0
     , containers
+    , dependent-sum-template
     , mtl
     , some
     , template-haskell
@@ -125,8 +129,6 @@ test-suite test
   -- Modules included in this executable, other than Main.
   other-modules:
     CheckParsers
-    LexStream
-    Parsers
     ParsingTests
     Sexp
     TypingTests

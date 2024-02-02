@@ -1,4 +1,4 @@
-module Parsers where
+module Hasp.Examples.Parsers where
 
 import Control.Monad.Except (runExcept)
 import Data.GADT.Compare

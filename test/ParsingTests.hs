@@ -9,10 +9,10 @@ import Data.GADT.Compare
 import Data.GADT.Show
 import Hasp.Char
 import Hasp.Combinators
+import Hasp.Examples.Parsers
 import Hasp.Hoas
 import Hasp.Parser
 import Hasp.Stream
-import Parsers
 import Test.Tasty
 import Test.Tasty.HUnit
 

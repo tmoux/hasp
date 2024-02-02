@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module LexStream where
+module Hasp.Examples.LexStream where
 
 import Data.Some
 import Hasp.Parser (Parser, parse)

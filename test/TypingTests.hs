@@ -12,7 +12,7 @@ import Hasp.Hoas
 import Hasp.Stream (Tag (Tag))
 import Hasp.Typecheck
 import Hasp.Types
-import Parsers
+import Hasp.Examples.Parsers
 import Test.Tasty
 import Test.Tasty.HUnit
 import Prelude hiding (null)
