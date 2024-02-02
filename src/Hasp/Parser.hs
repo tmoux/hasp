@@ -53,7 +53,7 @@ chr c =
 bot :: Parser s a
 bot = P (const Nothing)
 
-alt :: (Stream s t, Ord (Some t)) => Tp (Some t) -> Parser s a -> Tp (Some t) -> Parser s a -> Parser s a
+alt :: (Stream s t, GCompare t) => Tp (Some t) -> Parser s a -> Tp (Some t) -> Parser s a -> Parser s a
 alt t1 p1 t2 p2 =
   P
     ( \s ->
@@ -71,7 +71,7 @@ alt t1 p1 t2 p2 =
                 | otherwise -> Nothing
     )
 
-toParser' :: (Stream s t, GEq t, Ord (Some t)) => Grammar ctx a t (Tp (Some t)) -> HList (Parser s) ctx -> Parser s a
+toParser' :: (Stream s t, GEq t, GCompare t) => Grammar ctx a t (Tp (Some t)) -> HList (Parser s) ctx -> Parser s a
 toParser' o@(gr, _) env = case gr of
   (Eps v) -> eps v
   (Seq g1 g2) -> seq p1 p2
@@ -90,5 +90,5 @@ toParser' o@(gr, _) env = case gr of
       p = toParser' o env
   (Var v) -> hlookup v env
 
-toParser :: (Stream s t, GEq t, Ord (Some t)) => Grammar '[] a t (Tp (Some t)) -> Parser s a
+toParser :: (Stream s t, GEq t, GCompare t) => Grammar '[] a t (Tp (Some t)) -> Parser s a
 toParser g = toParser' g HNil
