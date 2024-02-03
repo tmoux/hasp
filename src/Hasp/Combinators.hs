@@ -14,6 +14,12 @@ star :: Hoas t a -> Hoas t [a]
 star p = fix $
   \rest -> eps [] <|> (:) <$> p <*> rest
 
+sepBy1 :: Hoas t a -> Hoas t sep -> Hoas t [a]
+sepBy1 p sep = (:) <$> p <*> star (sep *> p)
+
+sepBy :: Hoas t a -> Hoas t sep -> Hoas t [a]
+sepBy p sep = eps [] <|> sepBy1 p sep
+
 charset :: [t a] -> Hoas t a
 charset l = asum (tok <$> l)
 
@@ -30,9 +36,11 @@ count n p
 many :: Hoas t a -> Hoas t [a]
 many = star
 
+some :: Hoas t a -> Hoas t [a]
+some p = (:) <$> p <*> star p
+
 many1 :: Hoas t a -> Hoas t [a]
 many1 p = (:) <$> p <*> star p
-
 
 chainr1 :: Hoas t a -> Hoas t (a -> a -> a) -> Hoas t a
 chainr1 a op = fix $

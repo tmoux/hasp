@@ -63,6 +63,7 @@ library
     Hasp.Char
     Hasp.Combinators
     Hasp.Ctx
+    Hasp.Examples.Dyck
     Hasp.Examples.LexStream
     Hasp.Examples.Parsers
     Hasp.Examples.Sexp
@@ -168,7 +169,9 @@ test-suite bench
 
   -- Modules included in this executable, other than Main.
   other-modules:
+    Bench.Dyck
     Bench.Sexp
+    Dyck
     Sexp
 
   -- LANGUAGE extensions used by modules in this package.
@@ -193,3 +196,4 @@ test-suite bench
     , mtl
     , parsec
     , some
+    , text

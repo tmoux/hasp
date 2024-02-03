@@ -14,11 +14,11 @@ import Data.GADT.Show.TH
 import Data.Some
 import Hasp.Char
 import Hasp.Combinators
+import Hasp.Examples.LexStream
+import Hasp.Examples.Parsers (makeParser)
 import Hasp.Hoas
 import Hasp.Parser (Parser (..), parse)
 import Hasp.Stream
-import Hasp.Examples.LexStream
-import Hasp.Examples.Parsers (makeParser)
 
 -- | Let's parse a language of s-expressions, where atoms are alphanumeric strings.
 -- Our parser will return the number of atoms in the s-expression.
@@ -41,6 +41,17 @@ deriveGShow ''TTag
 deriveGEq ''TTag
 deriveGCompare ''TTag
 
+-- TEST: parser without lexing stage
+-- TODO: how to write valid grammar including whitespace?
+-- sexpChar :: Hoas CharTag Int
+-- sexpChar = fix $ \p ->
+--   choice
+--     [ 1 <$ alpha <* many alphaNum,
+--       between (char '(') (char ')') (sum <$> (p `sepBy` some space))
+--     ]
+-- 
+-- countAtoms' :: String -> Maybe Int
+-- countAtoms' s = fst <$> parse (makeParser sexpChar) s
 
 -- Our parser will process a stream consisting of tokens indexed by CharTag (a tag for each possible Char) and will return Some (Token TTag), or a (Token TTag a) for some type a.
 -- It ignores whitespace and tokenizes alphanumeric strings and left/right parentheses.

@@ -1,6 +1,7 @@
 module Main where
 
 import Bench.Sexp
+import Bench.Dyck
 import Criterion.Main
 
 -- The function we're benchmarking.
@@ -35,5 +36,6 @@ main =
       --     bench "9" $ whnf fib' 9,
       --     bench "11" $ whnf fib' 11
       --   ],
+      dyckBench,
       sexpBench
     ]
