@@ -1,10 +1,5 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Hasp.Parser where
 

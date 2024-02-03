@@ -1,5 +1,3 @@
-{-# LANGUAGE GADTs #-}
-
 module Hasp.Char where
 
 import Hasp.Combinators

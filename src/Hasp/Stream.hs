@@ -1,16 +1,10 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE StandaloneDeriving #-}
-
 module Hasp.Stream where
 
 import Data.Data ((:~:) (..))
 import Data.GADT.Compare
 import Data.GADT.Show
 import Data.Some
+import qualified Data.Text as T
 
 data Token t a = Token
   { tag :: t a,
@@ -57,3 +51,6 @@ unconsList s =
   uncons s >>= \(tok, rest) ->
     withSome tok $ \case
       Token (Tag _) d -> Just (d, rest)
+
+instance Stream T.Text (Tag Char) where
+  uncons s = T.uncons s >>= \(c, rest) -> return (mkSome $ Token (Tag c) c, rest)

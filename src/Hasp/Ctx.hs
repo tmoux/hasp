@@ -1,8 +1,4 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Hasp.Ctx where
@@ -50,24 +46,24 @@ hmap f (HCons x xs) = HCons (f x) (hmap f xs)
 
 -- This stuff below isn't used:
 
-data Nat = Zero | Succ Nat
-
-type family CtxLength a :: Nat where
-  CtxLength '[] = 'Zero
-  CtxLength (_ ': xs) = 'Succ (CtxLength xs)
-
-data Vec :: Type -> Nat -> Type where
-  VNil :: Vec a 'Zero
-  VCons :: a -> Vec a n -> Vec a ('Succ n)
-
-data Fin :: Nat -> Type where
-  FinZ :: Fin ('Succ a)
-  FinS :: Fin a -> Fin ('Succ a)
-
-vlookup :: Fin n -> Vec a n -> a
-vlookup FinZ (VCons x _) = x
-vlookup (FinS n) (VCons _ xs) = vlookup n xs
-
-homl :: (CtxLength ctx ~ n) => Index ctx b -> Vec a n -> a
-homl IndexZ (VCons x _) = x
-homl (IndexS i) (VCons _ xs) = homl i xs
+-- data Nat = Zero | Succ Nat
+-- 
+-- type family CtxLength a :: Nat where
+--   CtxLength '[] = 'Zero
+--   CtxLength (_ ': xs) = 'Succ (CtxLength xs)
+-- 
+-- data Vec :: Type -> Nat -> Type where
+--   VNil :: Vec a 'Zero
+--   VCons :: a -> Vec a n -> Vec a ('Succ n)
+-- 
+-- data Fin :: Nat -> Type where
+--   FinZ :: Fin ('Succ a)
+--   FinS :: Fin a -> Fin ('Succ a)
+-- 
+-- vlookup :: Fin n -> Vec a n -> a
+-- vlookup FinZ (VCons x _) = x
+-- vlookup (FinS n) (VCons _ xs) = vlookup n xs
+-- 
+-- homl :: (CtxLength ctx ~ n) => Index ctx b -> Vec a n -> a
+-- homl IndexZ (VCons x _) = x
+-- homl (IndexS i) (VCons _ xs) = homl i xs
