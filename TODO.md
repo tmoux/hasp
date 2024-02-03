@@ -7,6 +7,7 @@
 - Switch around parameters in Grammar
 - Re-export Data.GADT stuff to clean up imports
 - Clean up language extensions with default-extensions in .cabal
+- Add CI to github
 
 ### Eventually:
 - Add staging with TH

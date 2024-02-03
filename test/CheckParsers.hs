@@ -14,8 +14,8 @@ checkLetter :: Checked (Hoas CharTag Char)
 checkLetter = $$(checkParser letter)
 
 -- These declarations do not compile:
--- checkBadFixpoint :: Checked (Hoas Char Char)
+-- checkBadFixpoint :: Checked (Hoas CharTag Char)
 -- checkBadFixpoint = $$(checkParser hBadFixpoint)
 
--- checkBadDisj :: Checked (Hoas Char Char)
+-- checkBadDisj :: Checked (Hoas CharTag Char)
 -- checkBadDisj = $$(checkParser hBadDisj)
