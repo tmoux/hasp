@@ -66,7 +66,7 @@ token = fix $ \p ->
         ]
 
 -- Construct a parser from the HOAS DSL
-lexerP :: Parser String (Some (Token TTag))
+lexerP :: Stream s CharTag => Parser s (Some (Token TTag))
 lexerP = makeParser token
 
 -- This is our actual parser: it takes a stream of TTags and returns an Int (the number of atoms)
@@ -78,5 +78,5 @@ parseSexp = fix $ \p ->
     ]
 
 -- A helper function to parse a string and return the number of atoms (or Nothing if parsing fails)
-countAtoms :: String -> Maybe Int
+countAtoms :: Stream s CharTag => s -> Maybe Int
 countAtoms s = fst <$> parse (makeParser parseSexp) (makeLexStream lexerP s)

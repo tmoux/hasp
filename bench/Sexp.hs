@@ -9,8 +9,8 @@ module Sexp where
 
 import Control.Monad (void)
 import Text.Parsec
-
-type Parser = Parsec String ()
+import Text.Parsec.Text
+import Data.Text
 
 lparen :: Parser ()
 lparen = void (char '(') <* spaces
@@ -24,7 +24,7 @@ atom = (:) <$> letter <*> many alphaNum <* spaces
 sexp :: Parser Int
 sexp = 1 <$ atom <|> between lparen rparen (sum <$> many sexp)
 
-countAtoms :: String -> Maybe Int
+countAtoms :: Text -> Maybe Int
 countAtoms s = case parse sexp "" s of
   Left _ -> Nothing
   Right i -> Just i
