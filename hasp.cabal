@@ -95,7 +95,7 @@ library
 
   -- Other library packages from which modules are imported.
   build-depends:
-    , base                    ^>=4.17.2.0
+    , base                    ^>=4.18.2.0
     , containers
     , dependent-sum-template
     , mtl
@@ -124,7 +124,7 @@ executable hasp
 
   -- Other library packages from which modules are imported.
   build-depends:
-    , base  ^>=4.17.2.0
+    , base  ^>=4.18.2.0
     , hasp
 
   -- Directories containing source files.
@@ -161,7 +161,7 @@ test-suite test
 
   -- Test dependencies.
   build-depends:
-    , base                    ^>=4.17.2.0
+    , base                    ^>=4.18.2.0
     , containers
     , dependent-sum-template
     , hasp
@@ -200,7 +200,7 @@ test-suite bench
 
   -- Test dependencies.
   build-depends:
-    , base                    ^>=4.17.2.0
+    , base                    ^>=4.18.2.0
     , containers
     , criterion
     , dependent-sum-template

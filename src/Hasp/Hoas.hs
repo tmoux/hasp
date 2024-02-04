@@ -8,7 +8,6 @@ module Hasp.Hoas where
 -- HOAS to first-order conversion
 
 import Control.Applicative
-import Control.Monad.Except hiding (fix)
 import Hasp.Ctx (Ctx (..), tshift)
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (any, map, seq)

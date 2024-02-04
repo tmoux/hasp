@@ -3,7 +3,7 @@
 
 module Hasp.Parser where
 
-import Control.Monad.Except
+import Control.Monad (ap, (>=>))
 import Data.GADT.Compare
 import qualified Data.Set as S
 import Data.Some

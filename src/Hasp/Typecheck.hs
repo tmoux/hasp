@@ -3,6 +3,7 @@
 
 module Hasp.Typecheck where
 
+import Control.Monad (unless)
 import Control.Monad.Except
 import qualified Data.Bifunctor as Bifunctor
 import Data.Functor.Const
