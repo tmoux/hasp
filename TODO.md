@@ -2,12 +2,12 @@
 - Use TH to make typesafe parsers
   - Problem with instances for GADTs
   - Might have to update the Grammar to take in a quoted function
-- Improve parsing errors
-- Add more combinators
 - Switch around parameters in Grammar
 - Re-export Data.GADT stuff to clean up imports
 - Clean up language extensions with default-extensions in .cabal
 - Add CI to github
+- Add more combinators
+- Improve parsing errors
 
 ### Eventually:
 - Add staging with TH

@@ -42,6 +42,9 @@ sexpBench =
         "hasp"
         (benchSizes H.countAtoms sizes),
       bgroup
+        "hasp lex all"
+        (benchSizes H.countAtoms' sizes),
+      bgroup
         "parsec"
         (benchSizes P.countAtoms sizes)
     ]

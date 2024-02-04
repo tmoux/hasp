@@ -44,7 +44,7 @@ deriveGCompare ''TTag
 --     [ 1 <$ alpha <* many alphaNum,
 --       between (char '(') (char ')') (sum <$> (p `sepBy` some space))
 --     ]
--- 
+--
 -- countAtoms' :: String -> Maybe Int
 -- countAtoms' s = fst <$> parse (makeParser sexpChar) s
 
@@ -66,8 +66,15 @@ token = fix $ \p ->
         ]
 
 -- Construct a parser from the HOAS DSL
-lexerP :: Stream s CharTag => Parser s (Some (Token TTag))
+lexerP :: (Stream s CharTag) => Parser s (Some (Token TTag))
 lexerP = makeParser token
+
+parseTokens :: (Stream s CharTag) => s -> SomeToks TTag
+parseTokens st = SomeToks (go st)
+  where
+    go s = case parse lexerP s of
+      Nothing -> []
+      Just (t, rest) -> t : go rest
 
 -- This is our actual parser: it takes a stream of TTags and returns an Int (the number of atoms)
 parseSexp :: Hoas TTag Int
@@ -78,5 +85,9 @@ parseSexp = fix $ \p ->
     ]
 
 -- A helper function to parse a string and return the number of atoms (or Nothing if parsing fails)
-countAtoms :: Stream s CharTag => s -> Maybe Int
+countAtoms :: (Stream s CharTag) => s -> Maybe Int
 countAtoms s = fst <$> parse (makeParser parseSexp) (makeLexStream lexerP s)
+
+-- Helper function that does all lexing first
+countAtoms' :: (Stream s CharTag) => s -> Maybe Int
+countAtoms' s = let tokens = parseTokens s in fst <$> parse (makeParser parseSexp) tokens

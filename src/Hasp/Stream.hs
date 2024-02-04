@@ -42,6 +42,12 @@ instance (Ord c) => GCompare (Tag c) where
     | a < b = GLT
     | otherwise = GGT
 
+newtype SomeToks t = SomeToks {unSomeToks :: [Some (Token t)]}
+
+instance Stream (SomeToks t) t where
+  uncons (SomeToks []) = Nothing
+  uncons (SomeToks (x : xs)) = Just (x, SomeToks xs)
+
 instance Stream [c] (Tag c) where
   uncons [] = Nothing
   uncons (x : xs) = Just (mkSome $ Token (Tag x) x, xs)
