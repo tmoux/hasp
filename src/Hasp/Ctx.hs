@@ -6,9 +6,9 @@ module Hasp.Ctx where
 import Data.Kind (Type)
 import Unsafe.Coerce (unsafeCoerce)
 
--- |
---  Datatypes representing de Brujin indices and contexts, and helper functions for converting from HOAS to de Brujin indices.
-
+{- |
+ Datatypes representing de Brujin indices and contexts, and helper functions for converting from HOAS to de Brujin indices.
+-}
 data Ctx :: [Type] -> Type where
   CtxZ :: Ctx '[]
   CtxS :: Ctx ctx -> Ctx (a ': ctx)
@@ -47,23 +47,23 @@ hmap f (HCons x xs) = HCons (f x) (hmap f xs)
 -- This stuff below isn't used:
 
 -- data Nat = Zero | Succ Nat
--- 
+--
 -- type family CtxLength a :: Nat where
 --   CtxLength '[] = 'Zero
 --   CtxLength (_ ': xs) = 'Succ (CtxLength xs)
--- 
+--
 -- data Vec :: Type -> Nat -> Type where
 --   VNil :: Vec a 'Zero
 --   VCons :: a -> Vec a n -> Vec a ('Succ n)
--- 
+--
 -- data Fin :: Nat -> Type where
 --   FinZ :: Fin ('Succ a)
 --   FinS :: Fin a -> Fin ('Succ a)
--- 
+--
 -- vlookup :: Fin n -> Vec a n -> a
 -- vlookup FinZ (VCons x _) = x
 -- vlookup (FinS n) (VCons _ xs) = vlookup n xs
--- 
+--
 -- homl :: (CtxLength ctx ~ n) => Index ctx b -> Vec a n -> a
 -- homl IndexZ (VCons x _) = x
 -- homl (IndexS i) (VCons _ xs) = homl i xs

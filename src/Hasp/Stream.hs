@@ -7,8 +7,8 @@ import Data.Some
 import qualified Data.Text as T
 
 data Token t a = Token
-  { tag :: t a,
-    dat :: a
+  { tag :: t a
+  , dat :: a
   }
 
 getTag :: Some (Token t) -> Some t

@@ -6,9 +6,9 @@
 module CheckParsers where
 
 import Hasp.Char
+import Hasp.Examples.Parsers
 import Hasp.Hoas
 import Hasp.TH
-import Hasp.Examples.Parsers
 
 checkLetter :: Checked (Hoas CharTag Char)
 checkLetter = $$(checkParser letter)

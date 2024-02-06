@@ -26,4 +26,3 @@ main = do
       if len <= length gen && length gen <= len + 1000 then return gen else go
   gen <- go
   putStrLn gen
-

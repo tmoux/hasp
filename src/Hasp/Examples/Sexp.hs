@@ -15,14 +15,15 @@ import Hasp.Hoas
 import Hasp.Parser (Parser (..), parse)
 import Hasp.Stream
 
--- | Let's parse a language of s-expressions, where atoms are alphanumeric strings.
--- Our parser will return the number of atoms in the s-expression.
--- We will split up the parsing into a lexing and parsing phase.
--- That is, instead of parsing a string directly, we will first write a parser that will parse the first token from the string, and use this to construct a new Stream type that outputs tokens.
--- (Alternatively, we could parse all the tokens first, put it in a list, and then parse that list; I'm not sure which is better performance-wise.)
--- Our language of s-expressions is E ::= Atom | ( E* )
--- We thus have three different types of tokens, left parentheses, right parentheses, and atoms.
--- Each token has an associated data type. "Keywords"/punctuation such as parentheses carry a unit, and Atoms carry a string. An Integer token would have an Int type, and so on.
+{- | Let's parse a language of s-expressions, where atoms are alphanumeric strings.
+Our parser will return the number of atoms in the s-expression.
+We will split up the parsing into a lexing and parsing phase.
+That is, instead of parsing a string directly, we will first write a parser that will parse the first token from the string, and use this to construct a new Stream type that outputs tokens.
+(Alternatively, we could parse all the tokens first, put it in a list, and then parse that list; I'm not sure which is better performance-wise.)
+Our language of s-expressions is E ::= Atom | ( E* )
+We thus have three different types of tokens, left parentheses, right parentheses, and atoms.
+Each token has an associated data type. "Keywords"/punctuation such as parentheses carry a unit, and Atoms carry a string. An Integer token would have an Int type, and so on.
+-}
 
 -- | We represent these using a GADT, where each token tag is represented by a distinct data constructor:
 data TTag a where
@@ -30,8 +31,9 @@ data TTag a where
   RP :: TTag ()
   Atom :: TTag String
 
--- | We use some Template Haskell to automatically derive the equivalent of Show and Ord instances for GADTs.
--- Writing these instances by hand is straightforward but tedious.
+{- | We use some Template Haskell to automatically derive the equivalent of Show and Ord instances for GADTs.
+Writing these instances by hand is straightforward but tedious.
+-}
 deriveGShow ''TTag
 deriveGEq ''TTag
 deriveGCompare ''TTag
@@ -53,17 +55,17 @@ deriveGCompare ''TTag
 token :: Hoas CharTag (Some (Token TTag))
 token = fix $ \p ->
   choice
-    [ parseTok,
-      space *> p
+    [ parseTok
+    , space *> p
     ]
-  where
-    parseTok :: Hoas CharTag (Some (Token TTag))
-    parseTok =
-      choice
-        [ mkSome (Token LP ()) <$ char '(',
-          mkSome (Token RP ()) <$ char ')',
-          mkSome . Token Atom <$> ((:) <$> alpha <*> many alphaNum)
-        ]
+ where
+  parseTok :: Hoas CharTag (Some (Token TTag))
+  parseTok =
+    choice
+      [ mkSome (Token LP ()) <$ char '('
+      , mkSome (Token RP ()) <$ char ')'
+      , mkSome . Token Atom <$> ((:) <$> alpha <*> many alphaNum)
+      ]
 
 -- Construct a parser from the HOAS DSL
 lexerP :: (Stream s CharTag) => Parser s (Some (Token TTag))
@@ -71,17 +73,17 @@ lexerP = makeParser token
 
 parseTokens :: (Stream s CharTag) => s -> SomeToks TTag
 parseTokens st = SomeToks (go st)
-  where
-    go s = case parse lexerP s of
-      Nothing -> []
-      Just (t, rest) -> t : go rest
+ where
+  go s = case parse lexerP s of
+    Nothing -> []
+    Just (t, rest) -> t : go rest
 
 -- This is our actual parser: it takes a stream of TTags and returns an Int (the number of atoms)
 parseSexp :: Hoas TTag Int
 parseSexp = fix $ \p ->
   choice
-    [ between (tok LP) (tok RP) (sum <$> many p),
-      1 <$ tok Atom
+    [ between (tok LP) (tok RP) (sum <$> many p)
+    , 1 <$ tok Atom
     ]
 
 -- A helper function to parse a string and return the number of atoms (or Nothing if parsing fails)

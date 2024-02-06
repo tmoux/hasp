@@ -8,9 +8,9 @@ module Sexp where
 -- Parsec parser for s-expressions with alphanumeric atoms
 
 import Control.Monad (void)
+import Data.Text
 import Text.Parsec
 import Text.Parsec.Text
-import Data.Text
 
 lparen :: Parser ()
 lparen = void (char '(') <* spaces

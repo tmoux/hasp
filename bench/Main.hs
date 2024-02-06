@@ -8,5 +8,5 @@ main :: IO ()
 main =
   defaultMain
     [ dyckBench
-      -- sexpBench
+    , sexpBench
     ]

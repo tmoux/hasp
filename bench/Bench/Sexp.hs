@@ -17,15 +17,15 @@ files =
   M.fromList $
     map
       (second Text.readFile)
-      [ ("50", "bench/data/sexp/sexp.50"),
-        ("1024", "bench/data/sexp/sexp.1024"),
-        ("2048", "bench/data/sexp/sexp.2048"),
-        ("2048", "bench/data/sexp/sexp.2048"),
-        ("3072", "bench/data/sexp/sexp.3072"),
-        ("4096", "bench/data/sexp/sexp.4096"),
-        ("262144", "bench/data/sexp/sexp.262144"),
-        ("524288", "bench/data/sexp/sexp.524288"),
-        ("786432", "bench/data/sexp/sexp.786432")
+      [ ("50", "bench/data/sexp/sexp.50")
+      , ("1024", "bench/data/sexp/sexp.1024")
+      , ("2048", "bench/data/sexp/sexp.2048")
+      , ("2048", "bench/data/sexp/sexp.2048")
+      , ("3072", "bench/data/sexp/sexp.3072")
+      , ("4096", "bench/data/sexp/sexp.4096")
+      , ("262144", "bench/data/sexp/sexp.262144")
+      , ("524288", "bench/data/sexp/sexp.524288")
+      , ("786432", "bench/data/sexp/sexp.786432")
       ]
 
 benchSize :: (Text -> Maybe Int) -> String -> Benchmark
@@ -40,21 +40,21 @@ sexpBench =
     "sexp"
     [ bgroup
         "hasp"
-        (benchSizes H.countAtoms sizes),
-      bgroup
+        (benchSizes H.countAtoms sizes)
+    , bgroup
         "hasp lex all"
-        (benchSizes H.countAtoms' sizes),
-      bgroup
+        (benchSizes H.countAtoms' sizes)
+    , bgroup
         "parsec"
         (benchSizes P.countAtoms sizes)
     ]
-  where
-    sizes =
-      [ "1024",
-        "2048",
-        "3072",
-        "4096"
-      ]
+ where
+  sizes =
+    [ "1024"
+    , "2048"
+    , "3072"
+    , "4096"
+    ]
 
 -- [ "262144",
 --   "524288",

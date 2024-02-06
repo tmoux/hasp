@@ -70,19 +70,19 @@ toParser' :: (Stream s t, GEq t, GCompare t) => Grammar ctx t a (Tp (Some t)) ->
 toParser' o@(gr, _) env = case gr of
   (Eps v) -> eps v
   (Seq g1 g2) -> seq p1 p2
-    where
-      p1 = toParser' g1 env
-      p2 = toParser' g2 env
+   where
+    p1 = toParser' g1 env
+    p2 = toParser' g2 env
   (Tok c) -> chr c
   Bot -> bot
   (Alt g1 g2) -> alt (snd g1) p1 (snd g2) p2
-    where
-      p1 = toParser' g1 env
-      p2 = toParser' g2 env
+   where
+    p1 = toParser' g1 env
+    p2 = toParser' g2 env
   (Map f x) -> f <$> toParser' x env
   (Fix g) -> toParser' g (HCons p env)
-    where
-      p = toParser' o env
+   where
+    p = toParser' o env
   (Var v) -> hlookup v env
 
 toParser :: (Stream s t, GEq t, GCompare t) => Grammar '[] t a (Tp (Some t)) -> Parser s a

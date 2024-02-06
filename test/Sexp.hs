@@ -9,9 +9,8 @@ module Sexp where
 
 -- Parse s-expressions with alphanumeric atoms
 
-import Test.Tasty.HUnit
 import Hasp.Examples.Sexp
-
+import Test.Tasty.HUnit
 
 unit_sexp1 :: IO ()
 unit_sexp1 = countAtoms "(a b c)" @?= Just 3

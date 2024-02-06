@@ -47,17 +47,17 @@ chainr1 a op = fix $
   \p ->
     let rest = option $ (flip <$> op) <*> p
      in f <$> a <*> rest
-  where
-    f x Nothing = x
-    f x (Just g) = g x
+ where
+  f x Nothing = x
+  f x (Just g) = g x
 
 chainr :: Hoas t a -> Hoas t (a -> a -> a) -> a -> Hoas t a
 chainr a op def = chainr1 a op <|> eps def
 
 chainl1 :: Hoas t a -> Hoas t (a -> a -> a) -> Hoas t a
 chainl1 a op = reassoc <$> a <*> star (seq op a)
-  where
-    reassoc = foldl (\acc (f, y) -> acc `f` y)
+ where
+  reassoc = foldl (\acc (f, y) -> acc `f` y)
 
 chainl :: Hoas t a -> Hoas t (a -> a -> a) -> a -> Hoas t a
 chainl a op def = chainl1 a op <|> eps def
