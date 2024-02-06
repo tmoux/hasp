@@ -7,6 +7,6 @@ import Criterion.Main
 main :: IO ()
 main =
   defaultMain
-    [ dyckBench,
-      sexpBench
+    [ dyckBench
+      -- sexpBench
     ]

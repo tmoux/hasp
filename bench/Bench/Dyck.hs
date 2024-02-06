@@ -40,7 +40,13 @@ dyckBench =
         (benchSizes H.countParens sizes),
       bgroup
         "parsec text"
-        (benchSizes P.countParens' sizes)
+        (benchSizes P.countParens sizes),
+      bgroup
+        "handwritten parser"
+        (benchSizes P.handWritten sizes),
+      bgroup
+        "handwritten char tag"
+        (benchSizes P.handWrittenCharTag sizes)
     ]
   where
     sizes =
