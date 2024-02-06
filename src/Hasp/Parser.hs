@@ -48,6 +48,7 @@ chr c =
 bot :: Parser s a
 bot = P (const Nothing)
 
+-- TODO: Don't use set membership checks here. Instead, generate the code that cases on all the chars in t1/t2.
 alt :: (Stream s t, GCompare t) => Tp (Some t) -> Parser s a -> Tp (Some t) -> Parser s a -> Parser s a
 alt t1 p1 t2 p2 =
   P

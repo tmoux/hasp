@@ -1,7 +1,3 @@
-- Do benchmarks with parsec, other parsing libraries
-- Use TH to make typesafe parsers
-  - Problem with instances for GADTs
-  - Might have to update the Grammar to take in a quoted function
 - Re-export Data.GADT stuff to clean up imports
 - Clean up language extensions with default-extensions in .cabal
 - Add CI to github
@@ -9,6 +5,9 @@
 - Improve parsing errors
 
 ### Eventually:
+- Use TH to make typesafe parsers
+  - Problem with instances for GADTs
+  - Might have to update the Grammar to take in a quoted function
 - Add staging with TH
 
 - Improve error reporting
