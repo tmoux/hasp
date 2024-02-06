@@ -66,7 +66,7 @@ alt t1 p1 t2 p2 =
                 | otherwise -> Nothing
     )
 
-toParser' :: (Stream s t, GEq t, GCompare t) => Grammar ctx a t (Tp (Some t)) -> HList (Parser s) ctx -> Parser s a
+toParser' :: (Stream s t, GEq t, GCompare t) => Grammar ctx t a (Tp (Some t)) -> HList (Parser s) ctx -> Parser s a
 toParser' o@(gr, _) env = case gr of
   (Eps v) -> eps v
   (Seq g1 g2) -> seq p1 p2
@@ -85,5 +85,5 @@ toParser' o@(gr, _) env = case gr of
       p = toParser' o env
   (Var v) -> hlookup v env
 
-toParser :: (Stream s t, GEq t, GCompare t) => Grammar '[] a t (Tp (Some t)) -> Parser s a
+toParser :: (Stream s t, GEq t, GCompare t) => Grammar '[] t a (Tp (Some t)) -> Parser s a
 toParser g = toParser' g HNil

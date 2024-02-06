@@ -33,7 +33,7 @@ import Prelude hiding (any, map, seq)
 --   fmap = e
 -- newtype Hoas' s m a = H {unH :: forall ctx. Ctx ctx -> Grammar ctx s m a ()}
 
-newtype Hoas t a = H {unH :: forall ctx. Ctx ctx -> Grammar ctx a t ()}
+newtype Hoas t a = H {unH :: forall ctx. Ctx ctx -> Grammar ctx t a ()}
 
 -- These instances lets us write parser combinators in a more familiar manner, using <|>, <*>, and friends.
 instance Functor (Hoas t) where
@@ -51,7 +51,7 @@ instance Alternative (Hoas t) where
 -- Thus we can't implement monadic bind, where the second parser depends on the output of the first.
 -- See https://stackoverflow.com/questions/7861903/
 
-mkG :: (forall ctx. Ctx ctx -> Grammar' ctx a t ()) -> Hoas t a
+mkG :: (forall ctx. Ctx ctx -> Grammar' ctx t a ()) -> Hoas t a
 mkG v = H $ \i -> (v i, ())
 
 eps :: a -> Hoas t a
@@ -78,7 +78,7 @@ fix f = mkG $ \i ->
       v = \j -> (Var (tshift j (CtxS i)), ())
    in Fix $ unH (f (H v)) (CtxS i)
 
-toTerm :: Hoas t a -> Grammar '[] a t ()
+toTerm :: Hoas t a -> Grammar '[] t a ()
 toTerm t = unH t CtxZ
 
 (<|>) :: Hoas t a -> Hoas t a -> Hoas t a
