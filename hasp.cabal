@@ -63,12 +63,14 @@ library
     Hasp.Char
     Hasp.Combinators
     Hasp.Ctx
+    Hasp.DgnfParser
     Hasp.Examples.Dyck
     Hasp.Examples.LexStream
     Hasp.Examples.Parsers
     Hasp.Examples.Sexp
     Hasp.Grammar
     Hasp.Hoas
+    Hasp.Normalization
     Hasp.Parser
     Hasp.Stream
     Hasp.TH
