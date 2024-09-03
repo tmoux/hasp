@@ -68,7 +68,12 @@ normalize' (gr, _) = case gr of
     g2 <- unDGNF <$> normalize' b <*> pure n2
     let adds = catMaybes [append ns1 [n2] | ns1 <- g1 ! n1]
     return $ DGNF (\n -> M.singleton n adds <+> g1 <+> g2)
-  -- TODO: add ALT case
+  (Alt a b) -> do
+    n1 <- genFresh
+    g1 <- unDGNF <$> normalize' a <*> pure n1
+    n2 <- genFresh
+    g2 <- unDGNF <$> normalize' b <*> pure n2
+    return $ DGNF (\n -> M.singleton n (g1 ! n1 ++ g2 ! n2) <+> g1 <+> g2)
   Fix g -> do
     n' <- genFresh
     g' <- unDGNF <$> normalize' g <*> pure n'
