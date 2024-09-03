@@ -1,14 +1,19 @@
+{-# LANGUAGE DataKinds #-}
+
 module Hasp.Examples.Parsers where
 
 import Control.Monad.Except (runExcept)
 import Data.GADT.Compare
 import Data.GADT.Show
+import Data.Some (Some)
 import Hasp.Char
 import Hasp.Combinators
+import Hasp.Grammar (Grammar)
 import Hasp.Hoas
 import Hasp.Parser (Parser, toParser)
 import Hasp.Stream
 import Hasp.Typecheck (typecheck)
+import Hasp.Types (Tp)
 
 data Sexp = Sym Char | SSeq [Sexp]
   deriving (Show, Eq)
@@ -67,3 +72,13 @@ makeParser :: (Stream s t, GEq t, GShow t, GCompare t) => Hoas t a -> Parser s a
 makeParser p = case runExcept $ toParser <$> typecheck (toTerm p) of
   Left err -> error err
   Right parser -> parser
+
+makeTypecheck :: (GEq t, GShow t, GCompare t) => Hoas t a -> Grammar '[] t a (Tp (Some t))
+makeTypecheck p = case runExcept $ typecheck (toTerm p) of
+  Left err -> error err
+  Right g -> g
+
+makeTypecheck' :: (GShow t, GCompare t) => Grammar '[] t a d -> Grammar '[] t a (Tp (Some t))
+makeTypecheck' p = case runExcept $ typecheck p of
+  Left err -> error err
+  Right g -> g

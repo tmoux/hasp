@@ -73,6 +73,7 @@ library
     Hasp.Normalization
     Hasp.Parser
     Hasp.Stream
+    Hasp.Test
     Hasp.TH
     Hasp.Typecheck
     Hasp.Types

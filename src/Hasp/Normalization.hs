@@ -1,17 +1,20 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# HLINT ignore "Avoid lambda using `infix`" #-}
 {-# HLINT ignore "Use const" #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Hasp.Normalization where
 
-import Control.Monad.State (State, evalState, state)
+import Control.Monad.State.Strict (State, evalState, state)
 import Data.Kind (Type)
 import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, mapMaybe)
-import Data.Some (Some)
+import Data.Some (Some (Some))
+import Debug.Trace
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Hasp.Types (Tp)
@@ -39,6 +42,11 @@ data NF :: [Type] -> (Type -> Type) -> Type where
   TerminalProd :: t a -> [NonTerminalId] -> NF ctx t
   VarProd :: Index ctx a -> [NonTerminalId] -> NF ctx t
 
+instance (Show (Some t)) => Show (NF ctx t) where
+  show EpsProd = "eps"
+  show (TerminalProd t ns) = show (Some t) ++ " " ++ show ns
+  show (VarProd a ns) = show a ++ " " ++ show ns
+
 -- NOTE: we need to add data for actual parsers
 data DGNF :: [Type] -> (Type -> Type) -> Type where
   DGNF :: (NonTerminalId -> M.Map NonTerminalId [NF ctx t]) -> DGNF ctx t
@@ -48,15 +56,17 @@ unDGNF (DGNF f) = f
 
 -- Top-level normalization function
 
-normalize :: forall t a. Grammar '[] t a (Tp (Some t)) -> DGNF '[] t
+-- normalize :: forall t a. Grammar '[] t a (Tp (Some t)) -> DGNF '[] t
+normalize :: forall ctx t a d. (Show (Some t)) => Grammar ctx t a d -> DGNF ctx t
 normalize g = eval d 0
   where
-    d :: State NonTerminalId (DGNF '[] t)
+    d :: State NonTerminalId (DGNF ctx t)
     d = normalize' g
 
 -- Helper normalization function
 -- TODO: Maybe we don't use DGNF here to reduce wrapping/unwrapping?
-normalize' :: (MonadFresh m) => Grammar ctx t a d -> m (DGNF ctx t)
+-- normalize' :: (MonadFresh m) => Grammar ctx t a d -> m (DGNF ctx t)
+normalize' :: (MonadFresh m, Show (Some t)) => Grammar ctx t a d -> m (DGNF ctx t)
 normalize' (gr, _) = case gr of
   (Eps _) -> return $ DGNF (\n -> M.singleton n [EpsProd])
   (Tok t) -> return $ DGNF (\n -> M.singleton n [TerminalProd t []])
@@ -83,12 +93,15 @@ normalize' (gr, _) = case gr of
 
     -- Type 2
     -- TODO: rename these helper functions
+    -- traceM $ "original prods: " ++ show originalProds
     let fn :: NF (a : ctx) t -> NF ctx t -> Maybe (NF ctx t)
-        fn nf2 nf1 = case nf2 of
-          (VarProd IndexZ ns) -> append nf1 ns
+        fn nf1 nf2 = case nf1 of
+          (VarProd IndexZ ns) -> append nf2 ns
           _ -> Nothing
 
-        beginWithVar = M.map (concatMap (\nf -> mapMaybe (fn nf) originalProds)) g'
+        beginWithVar =
+          -- trace ("original prods: " ++ show originalProds) $
+            M.map (concatMap (\nf -> mapMaybe (fn nf) originalProds)) g'
 
     -- Type 3
     -- TODO: rename these helper functions
@@ -101,6 +114,11 @@ normalize' (gr, _) = case gr of
 
         notBeginWithVar = M.map (mapMaybe f) g'
 
+    traceM ("n':" ++ show n')
+    traceM ("g':" ++ show g')
+    traceM ("beginWithVar:" ++ show beginWithVar)
+    traceM ("originalProds:" ++ show originalProds)
+    -- traceM (show g')
     return $
       DGNF
         ( \n ->
@@ -109,7 +127,7 @@ normalize' (gr, _) = case gr of
               <+> notBeginWithVar
         )
   (Var x) -> return $ DGNF (\n -> M.singleton n [VarProd x []])
-  _ -> undefined
+  (Map _ x) -> normalize' x
   where
     (<+>) :: (Ord k) => M.Map k [a] -> M.Map k [a] -> M.Map k [a]
     (<+>) = M.unionWith (++)
@@ -121,6 +139,7 @@ shift (VarProd IndexZ _) = error "unreachable! shift"
 shift (VarProd (IndexS x) ns) = VarProd x ns
 
 append :: NF ctx t -> [NonTerminalId] -> Maybe (NF ctx t)
+append nf [] = Just nf
 append nf c = case nf of
   EpsProd -> Nothing
   (TerminalProd t ns) -> Just $ TerminalProd t (ns ++ c)
