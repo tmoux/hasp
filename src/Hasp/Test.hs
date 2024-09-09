@@ -3,6 +3,7 @@
 
 module Hasp.Test where
 
+import Data.GADT.Show (GShow)
 import qualified Data.Map.Strict as M
 import Data.Some (Some)
 import Hasp.Ctx (Index (IndexS, IndexZ))
@@ -68,10 +69,10 @@ g = makeTypecheck p
 -- d :: M.Map NonTerminalId [NF '[] TTag]
 -- d :: M.Map NonTerminalId [NF (a : b : ctx) TTag]
 -- d = (unDGNF $ normalize g) 99
-d = (unDGNF $ normalize g) 99
+d = normalize g
 
-display :: (Show k, Show v) => M.Map k [v] -> String
-display m = concatMap f (M.toList m)
+display :: (GShow t) => DGNF ctx t -> String
+display (DGNF n m) = "start: " ++ show n ++ "\n" ++ concatMap f (M.toList m)
   where
     f (key, vals) = concatMap (\v -> show key ++ " --> " ++ show v ++ "\n") vals
 
