@@ -13,6 +13,7 @@ import Data.Kind (Type)
 import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, mapMaybe)
+import qualified Data.Set as S
 import Data.Some (Some (Some))
 import Debug.Trace
 import Hasp.Ctx (Index (..))
@@ -63,6 +64,24 @@ normalize g = eval d 0
     d :: State NonTerminalId (DGNF ctx t)
     d = normalize' g
 
+-- Prune nonreachable terminal states
+prune :: NonTerminalId -> M.Map NonTerminalId [NF ctx t] -> M.Map NonTerminalId [NF ctx t]
+prune n mp = M.filterWithKey (\k _ -> S.member k reachableNonterminals) mp
+  where
+    reachableNonterminals :: S.Set NonTerminalId
+    reachableNonterminals = dfs S.empty n
+
+    dfs :: S.Set NonTerminalId -> NonTerminalId -> S.Set NonTerminalId
+    dfs seen nid
+      | S.member nid seen = S.empty
+      | otherwise = S.unions (map f (mp ! nid))
+      where
+        seen' = S.insert nid seen
+        f :: NF ctx t -> S.Set NonTerminalId
+        f EpsProd = S.empty
+        f (TerminalProd _ ns) = S.union (S.fromList ns) (S.unions (map (dfs seen') ns))
+        f (VarProd _ ns) = S.union (S.fromList ns) (S.unions (map (dfs seen') ns))
+
 -- Helper normalization function
 -- TODO: Maybe we don't use DGNF here to reduce wrapping/unwrapping?
 -- normalize' :: (MonadFresh m) => Grammar ctx t a d -> m (DGNF ctx t)
@@ -101,7 +120,7 @@ normalize' (gr, _) = case gr of
 
         beginWithVar =
           -- trace ("original prods: " ++ show originalProds) $
-            M.map (concatMap (\nf -> mapMaybe (fn nf) originalProds)) g'
+          M.map (concatMap (\nf -> mapMaybe (fn nf) originalProds)) g'
 
     -- Type 3
     -- TODO: rename these helper functions
