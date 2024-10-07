@@ -19,33 +19,37 @@ p :: Hoas TTag ()
 -- p = eps 0
 -- p = tok LP <* tok RP
 -- p = fix (\ss -> eps () <|> tok LP <* ss)
-p =
-  fix
-    ( \s ->
-        (tok LP <* fix (\ss -> eps () <|> (s <* ss)) <* tok RP)
-          <|> H.map (const ()) (tok Atom)
-    )
+-- p =
+--   fix
+--     ( \s ->
+--         (tok LP <* fix (\ss -> eps () <|> (s <* ss)) <* tok RP)
+--           <|> H.map (const ()) (tok Atom)
+--     )
+
+-- p = tok LP <* tok RP <* tok LP
+
+p = fix (\s -> tok LP <* (s <|> eps ()) <* tok RP)
 
 -- \ss -> eps <|> s * ss
 --- q :: Grammar ((() : ctx) t ((), ()) ()
-q :: Grammar (a : ctx) t () ()
-q =
-  ( Fix
-      ( Alt
-          (Eps (), ())
-          ( Map
-              (const ())
-              ( Seq
-                  (Var (IndexS IndexZ), ())
-                  (Var IndexZ, ()),
-                ()
-              ),
-            ()
-          ),
-        ()
-      ),
-    ()
-  )
+-- q :: Grammar (a : ctx) t () ()
+-- q =
+--   ( Fix
+--       ( Alt
+--           (Eps (), ())
+--           ( Map
+--               (const ())
+--               ( Seq
+--                   (Var (IndexS IndexZ), ())
+--                   (Var IndexZ, ()),
+--                 ()
+--               ),
+--             ()
+--           ),
+--         ()
+--       ),
+--     ()
+--   )
 
 -- q :: Grammar (a : b : ctx) t () ()
 -- q =

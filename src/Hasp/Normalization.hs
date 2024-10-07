@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE EmptyCase #-}
 
 module Hasp.Normalization where
 
@@ -15,10 +16,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, mapMaybe)
 import qualified Data.Set as S
 import Data.Some (Some (Some))
-import Debug.Trace
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
-import Hasp.Types (Tp)
 
 -- Type of DGNF:
 -- A DGNF normal form is either an epsilon, a terminal followed by several nonterminals (t n_1 n_2 ...)
@@ -43,6 +42,20 @@ data NF :: [Type] -> (Type -> Type) -> Type where
   TerminalProd :: t a -> [NonTerminalId] -> NF ctx t
   VarProd :: Index ctx a -> [NonTerminalId] -> NF ctx t
 
+type ClosedNF t = NF '[] t
+
+-- Eliminate from a ClosedNF (only consider EpsProd, TerminalProd cases)
+elimClosedNF ::
+  r ->
+  (forall a. t a -> [NonTerminalId] -> r) ->
+  ClosedNF t ->
+  r
+elimClosedNF fEps fTerm = \case
+  EpsProd -> fEps
+  TerminalProd t ns -> fTerm t ns
+  VarProd t _ -> case t of {}
+
+
 instance (Show (Some t)) => Show (NF ctx t) where
   show EpsProd = "eps"
   show (TerminalProd t ns) = show (Some t) ++ " " ++ show ns
@@ -52,18 +65,21 @@ instance (Show (Some t)) => Show (NF ctx t) where
 data DGNF :: [Type] -> (Type -> Type) -> Type where
   DGNF :: NonTerminalId -> M.Map NonTerminalId [NF ctx t] -> DGNF ctx t
 
+data DGNF' :: [Type] -> (Type -> Type) -> Type where
+  DGNF' :: NonTerminalId -> M.Map NonTerminalId [NF ctx t] -> DGNF' ctx t
+
 -- Top-level normalization function
 
 -- normalize :: forall t a. Grammar '[] t a (Tp (Some t)) -> DGNF '[] t
+-- TODO: relabel/recanonicalize the labels?
+-- TODO: detect isomorphic nonterminals? bisimulation?
+-- This is made more difficult by productions.
 normalize :: forall ctx t a d. (Show (Some t)) => Grammar ctx t a d -> DGNF ctx t
 normalize g = prune $ eval d 0
   where
     d :: State NonTerminalId (DGNF ctx t)
     d = normalize' g
 
--- Prune nonreachable terminal states
--- TODO: relabel/recanonicalize the labels?
--- TODO: detect isomorphic nonterminals? bisimulation?
 prune :: DGNF ctx t -> DGNF ctx t
 prune (DGNF n g) = DGNF n (M.filterWithKey (\k _ -> S.member k reachableNonterminals) g)
   where

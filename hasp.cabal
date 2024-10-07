@@ -72,6 +72,7 @@ library
     Hasp.Hoas
     Hasp.Normalization
     Hasp.Parser
+    Hasp.Resolved
     Hasp.Stream
     Hasp.Test
     Hasp.TH
@@ -100,11 +101,13 @@ library
   build-depends:
     , base                    ^>=4.18.2.0
     , containers
+    , dependent-map
     , dependent-sum-template
     , mtl
     , some
     , template-haskell
     , text
+    , todo
 
   -- Directories containing source files.
   hs-source-dirs:     src
