@@ -1,22 +1,12 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Hasp.Test where
 
 import Data.Dependent.Map
 import Data.Dependent.Sum
-import Data.GADT.Show (GShow)
-import qualified Data.Map.Strict as M
-import Data.Some (Some)
 import Data.Unique.Tag
-import Hasp.Ctx (Index (IndexS, IndexZ))
-import Hasp.Examples.Parsers
 import Hasp.Examples.Sexp
-import Hasp.Grammar (Grammar, Grammar' (..))
 import Hasp.Hoas
-import qualified Hasp.Hoas as H
-import Hasp.Normalization
-import Hasp.Types (Tp)
 import Data.Kind (Type)
 import Control.Monad.ST
 

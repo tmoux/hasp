@@ -46,7 +46,6 @@ data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
 data DGNFNonTerminal m ctx t a where
   DGNFNonTerminal :: DM.DMap (NF ctx t) (DGNFProd m t a) -> Maybe a -> DGNFNonTerminal m ctx t a
-  DGNFNonTerminalMap :: DGNFNonTerminal m ctx t b -> (b -> a) -> DGNFNonTerminal m ctx t a
 
 -- Is this instance needed?
 -- instance Functor (DGNFNTSeq m t) where
@@ -59,9 +58,9 @@ fmapDGNFProd :: (a -> d) -> DGNFProd m t a b -> DGNFProd m t d b
 fmapDGNFProd f (DGNFProd ns g) = DGNFProd ns ((f .) . g)
 
 --
--- instance Functor (DGNFNonTerminal m ctx t) where
---   fmap f (DGNFNonTerminal prods null) = DGNFNonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
---
+instance Functor (DGNFNonTerminal m ctx t) where
+   fmap f (DGNFNonTerminal prods null) = DGNFNonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
+
 
 epsNonTerminal :: a -> DGNFNonTerminal m ctx t a
 epsNonTerminal a = DGNFNonTerminal DM.empty (Just a)
@@ -85,7 +84,7 @@ normalize' (gr, _) =
     Bot -> return $ DGNFGrammar n DM.empty
     Map f x -> do
       DGNFGrammar n' x' <- normalize' x
-      return $ DGNFGrammar n (DM.insert n (DGNFNonTerminalMap (x' ! n') f) x')
+      return $ DGNFGrammar n (DM.insert n (f <$> (x' ! n')) x')
     _ -> todo_
 
 {-

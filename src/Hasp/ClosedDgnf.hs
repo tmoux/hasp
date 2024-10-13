@@ -33,7 +33,6 @@ convertToClosed (DGNFGrammar start nonterms) =
   where
     convertNT :: DGNFNonTerminal m '[] t v -> NonTerminal m t v
     convertNT (DGNFNonTerminal prods null) = NonTerminal (DM.mapKeysMonotonic convertNF prods) null
-    convertNT (DGNFNonTerminalMap nt f) = f <$> convertNT nt
 
     convertNF :: NF '[] t c -> t c
     convertNF (Term t) = t
