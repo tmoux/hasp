@@ -19,6 +19,9 @@ data NonTerminal m t a = NonTerminal
     _closed_null :: Maybe a
   }
 
+instance Functor (NonTerminal m t) where
+  fmap f (NonTerminal prods null) = NonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
+
 data Grammar m t a = Grammar
   { _closed_start :: NonTerminalId m a,
     _closed_nonterminals :: DM.DMap (NonTerminalId m) (NonTerminal m t)
@@ -30,6 +33,7 @@ convertToClosed (DGNFGrammar start nonterms) =
   where
     convertNT :: DGNFNonTerminal m '[] t v -> NonTerminal m t v
     convertNT (DGNFNonTerminal prods null) = NonTerminal (DM.mapKeysMonotonic convertNF prods) null
+    convertNT (DGNFNonTerminalMap nt f) = f <$> convertNT nt
 
     convertNF :: NF '[] t c -> t c
     convertNF (Term t) = t

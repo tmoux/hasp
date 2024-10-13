@@ -1,25 +1,15 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE EmptyCase #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# HLINT ignore "Avoid lambda using `infix`" #-}
-{-# HLINT ignore "Use const" #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
+
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Hasp.Normalization where
 
 import Control.Monad.Primitive (PrimMonad (PrimState))
+import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.Kind (Type)
-import Data.Map.Strict ((!))
-import qualified Data.Map.Strict as M
-import Data.Maybe (catMaybes, mapMaybe)
-import qualified Data.Set as S
-import Data.Some (Some (Some))
 import Data.Unique.Tag
 import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
@@ -50,14 +40,28 @@ data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
 -- instance (GEq t) => GEq (NF ctx t) where
 --   geq = todo_
--- 
+--
 -- instance (GCompare t) => GCompare (NF ctx t) where
 --   gcompare = todo_
 
-data DGNFNonTerminal m ctx t a = DGNFNonTerminal
-  { _productions :: DM.DMap (NF ctx t) (DGNFProd m t a),
-    _null :: Maybe a
-  }
+data DGNFNonTerminal m ctx t a where
+  DGNFNonTerminal :: DM.DMap (NF ctx t) (DGNFProd m t a) -> Maybe a -> DGNFNonTerminal m ctx t a
+  DGNFNonTerminalMap :: DGNFNonTerminal m ctx t b -> (b -> a) -> DGNFNonTerminal m ctx t a
+
+-- Is this instance needed?
+-- instance Functor (DGNFNTSeq m t) where
+--   fmap f (Nil v) = Nil (f v)
+--   fmap f (Cons n ns g) = Cons n ns ((f .) . g)
+--
+
+-- awkward to write a Functor instance
+fmapDGNFProd :: (a -> d) -> DGNFProd m t a b -> DGNFProd m t d b
+fmapDGNFProd f (DGNFProd ns g) = DGNFProd ns ((f .) . g)
+
+--
+-- instance Functor (DGNFNonTerminal m ctx t) where
+--   fmap f (DGNFNonTerminal prods null) = DGNFNonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
+--
 
 epsNonTerminal :: a -> DGNFNonTerminal m ctx t a
 epsNonTerminal a = DGNFNonTerminal DM.empty (Just a)
@@ -78,6 +82,10 @@ normalize' (gr, _) =
   newTag >>= \n -> case gr of
     Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
     Tok t -> return $ DGNFGrammar n (DM.singleton n (tokenNonTerminal t))
+    Bot -> return $ DGNFGrammar n DM.empty
+    Map f x -> do
+      DGNFGrammar n' x' <- normalize' x
+      return $ DGNFGrammar n (DM.insert n (DGNFNonTerminalMap (x' ! n') f) x')
     _ -> todo_
 
 {-
