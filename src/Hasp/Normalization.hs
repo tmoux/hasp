@@ -13,20 +13,13 @@
 module Hasp.Normalization where
 
 import Control.Monad.Primitive (PrimMonad (PrimState))
-import Control.Monad.ST (ST)
-import Control.Monad.State.Strict (State, evalState, state)
 import qualified Data.Dependent.Map as DM
-import Data.GADT.Compare (GCompare, GEq, GOrdering (..), gcompare, geq)
-import Data.GADT.Compare.TH
-import Data.GADT.Show.TH
 import Data.Kind (Type)
 import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, mapMaybe)
 import qualified Data.Set as S
 import Data.Some (Some (Some))
-import Data.Type.Equality ((:~:) (..))
-import Data.Typeable (eqT)
 import Data.Unique.Tag
 import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
@@ -55,11 +48,11 @@ data DGNFProd :: (Type -> Type) -> (Type -> Type) -> Type -> Type -> Type where
 
 data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
-instance (GEq t) => GEq (NF ctx t) where
-  geq = todo_
-
-instance (GCompare t) => GCompare (NF ctx t) where
-  gcompare = todo_
+-- instance (GEq t) => GEq (NF ctx t) where
+--   geq = todo_
+-- 
+-- instance (GCompare t) => GCompare (NF ctx t) where
+--   gcompare = todo_
 
 data DGNFNonTerminal m ctx t a = DGNFNonTerminal
   { _productions :: DM.DMap (NF ctx t) (DGNFProd m t a),
