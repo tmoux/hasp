@@ -3,24 +3,12 @@
 
 module Hasp.ClosedDgnf where
 
-import Control.Monad.Reader (MonadReader, runReader)
 import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
-import Data.Dependent.Sum
 import Data.GADT.Compare (GCompare)
-import Debug.Todo (todo_)
 import Hasp.Normalization
 import qualified Hasp.Resolved as R
 import Prelude hiding (null)
-
-mapDMapKeys ::
-  (GCompare k, GCompare k') =>
-  (forall a. k a -> k' a) ->
-  DM.DMap k f ->
-  DM.DMap k' f
-mapDMapKeys f = DM.fromList . map mapSome . DM.toList
-  where
-    mapSome (k :=> v) = f k :=> v
 
 -- Conversion from DGNF to Resolved:
 
@@ -41,7 +29,7 @@ convertToClosed (DGNFGrammar start nonterms) =
   Grammar start (DM.map convertNT nonterms)
   where
     convertNT :: DGNFNonTerminal m '[] t v -> NonTerminal m t v
-    convertNT (DGNFNonTerminal prods null) = NonTerminal (mapDMapKeys convertNF prods) null
+    convertNT (DGNFNonTerminal prods null) = NonTerminal (DM.mapKeysMonotonic convertNF prods) null
 
     convertNF :: NF '[] t c -> t c
     convertNF (Term t) = t
@@ -51,12 +39,27 @@ convertToClosed (DGNFGrammar start nonterms) =
 -- this involves resolving the NonTerminalIds to NonTerminals.
 
 resolve :: Grammar m t a -> R.NonTerminal t a
-resolve = todo_
-
--- resolve (Grammar start nonterms) = runReader (resolveNonTerm (nonterms ! start)) todo_
+resolve (Grammar start nonterms) = resolveNonTerm nonterms (nonterms ! start)
 
 resolveNonTerm ::
-  (MonadReader (DM.DMap (NonTerminalId m) (NonTerminal m t)) mr) =>
+  DM.DMap (NonTerminalId m) (NonTerminal m t) ->
   NonTerminal m t a ->
-  mr (R.NonTerminal t a)
-resolveNonTerm = todo_
+  R.NonTerminal t a
+resolveNonTerm env (NonTerminal prods null) =
+  let prods' = DM.map (resolveProd env) prods
+   in R.NonTerminal prods' null
+
+resolveProd ::
+  DM.DMap (NonTerminalId m) (NonTerminal m t) ->
+  DGNFProd m t a b ->
+  R.Prod t a b
+resolveProd env (DGNFProd ntseq f) =
+  let ntseq' = resolveNTSeq env ntseq
+   in R.Prod ntseq' f
+
+resolveNTSeq ::
+  DM.DMap (NonTerminalId m) (NonTerminal m t) ->
+  DGNFNTSeq m t a ->
+  R.NTSeq t a
+resolveNTSeq _ (Nil a) = R.Nil a
+resolveNTSeq env (Cons n ns f) = R.Cons (resolveNonTerm env (env ! n)) (resolveNTSeq env ns) f
