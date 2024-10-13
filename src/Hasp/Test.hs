@@ -3,9 +3,12 @@
 
 module Hasp.Test where
 
+import Data.Dependent.Map
+import Data.Dependent.Sum
 import Data.GADT.Show (GShow)
 import qualified Data.Map.Strict as M
 import Data.Some (Some)
+import Data.Unique.Tag
 import Hasp.Ctx (Index (IndexS, IndexZ))
 import Hasp.Examples.Parsers
 import Hasp.Examples.Sexp
@@ -14,6 +17,31 @@ import Hasp.Hoas
 import qualified Hasp.Hoas as H
 import Hasp.Normalization
 import Hasp.Types (Tp)
+import Data.Kind (Type)
+import Control.Monad.ST
+
+data Gadt :: Type -> Type where
+  GadtCon :: a -> Gadt a
+
+instance Show a => Show (Gadt a) where
+  show (GadtCon a) = show a
+
+
+main :: ST s (Gadt Bool)
+main = do
+  x <- newTag
+  y <- newTag
+  -- z <- newTag
+  let m1 = fromList [x :=> GadtCon True, y :=> GadtCon "hello"]
+      -- m2 = fromList [x :=> (17 :: Int), z :=> (True, x)]
+  -- the type checker would (rightly) reject this line:
+  -- m3 = singleton y ("foo", "bar")
+
+  return (m1 ! x)
+  -- print (m1 ! x)
+  -- print (m1 ! y)
+  -- print (m2 ! x)
+  -- print (m1 ! snd (m2 ! z))
 
 p :: Hoas TTag ()
 -- p = eps 0
@@ -67,6 +95,7 @@ p = fix (\s -> tok LP <* (s <|> eps ()) <* tok RP)
 --     ()
 --   )
 
+{-
 g :: Grammar '[] TTag () (Tp (Some TTag))
 g = makeTypecheck p
 
@@ -86,3 +115,5 @@ display (DGNF n m) = "start: " ++ show n ++ "\n" ++ concatMap f (M.toList m)
 -- 3 --> IndexZ []
 -- 99 --> eps
 -- 99 --> IndexS IndexZ [3]
+
+-}

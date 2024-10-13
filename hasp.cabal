@@ -61,6 +61,7 @@ library
   -- Modules exported by the library.
   exposed-modules:
     Hasp.Char
+    Hasp.ClosedDgnf
     Hasp.Combinators
     Hasp.Ctx
     Hasp.DgnfParser
@@ -102,8 +103,11 @@ library
     , base                    ^>=4.18.2.0
     , containers
     , dependent-map
+    , dependent-sum
     , dependent-sum-template
     , mtl
+    , prim-uniq
+    , primitive
     , some
     , template-haskell
     , text

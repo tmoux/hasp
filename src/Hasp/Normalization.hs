@@ -1,42 +1,93 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE EmptyCase #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# HLINT ignore "Avoid lambda using `infix`" #-}
 {-# HLINT ignore "Use const" #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# LANGUAGE EmptyCase #-}
 
 module Hasp.Normalization where
 
+import Control.Monad.Primitive (PrimMonad (PrimState))
+import Control.Monad.ST (ST)
 import Control.Monad.State.Strict (State, evalState, state)
+import qualified Data.Dependent.Map as DM
+import Data.GADT.Compare (GCompare, GEq, GOrdering (..), gcompare, geq)
+import Data.GADT.Compare.TH
+import Data.GADT.Show.TH
 import Data.Kind (Type)
 import Data.Map.Strict ((!))
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes, mapMaybe)
 import qualified Data.Set as S
 import Data.Some (Some (Some))
+import Data.Type.Equality ((:~:) (..))
+import Data.Typeable (eqT)
+import Data.Unique.Tag
+import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
+import Prelude hiding (null)
 
 -- Type of DGNF:
 -- A DGNF normal form is either an epsilon, a terminal followed by several nonterminals (t n_1 n_2 ...)
 -- or a fresh variable alpha followed by several nonterminals (a n_1 n_2 ...)
 -- We use Debrujin indices for alpha, so they need to carry a Context / current depth in the type.
 -- A closed form well-typed term will normalize to a DGNF without any free variables.
--- Note: the types aren't directly used in the normalization process, but they guarantee that the result is well-defined, so it should be included in the exposed interface.
+-- Note: the (parsing) types aren't directly used in the normalization process, but they guarantee that the result is well-defined, so it should be included in the exposed interface.
+-- Each production should have a semantic action associated with it.
 
-type NonTerminalId = Int
+-- A NonTerminalId is indexed with the type of the parsing result that we get from parsing
+-- starting at this nonterminal.
+type NonTerminalId m = Tag (PrimState m)
 
--- Monad class for running normalization (we need to generate fresh nonterminal ids)
-class (Monad m) => MonadFresh m where
-  genFresh :: m NonTerminalId
-  eval :: m a -> NonTerminalId -> a
+-- Represents a sequence of nonterminals n_1 n_2 ... n_i and the associated semantic actions
+data DGNFNTSeq :: (Type -> Type) -> (Type -> Type) -> Type -> Type where
+  Nil :: a -> DGNFNTSeq m t a
+  Cons :: NonTerminalId m b -> DGNFNTSeq m t c -> (b -> c -> a) -> DGNFNTSeq m t a
 
-instance MonadFresh (State NonTerminalId) where
-  genFresh = state (\x -> (x, x + 1))
-  eval = evalState
+data DGNFProd :: (Type -> Type) -> (Type -> Type) -> Type -> Type -> Type where
+  DGNFProd :: DGNFNTSeq m t c -> (b -> c -> a) -> DGNFProd m t a b
 
+data NF ctx t a = Term (t a) | NFVar (Index ctx a)
+
+instance (GEq t) => GEq (NF ctx t) where
+  geq = todo_
+
+instance (GCompare t) => GCompare (NF ctx t) where
+  gcompare = todo_
+
+data DGNFNonTerminal m ctx t a = DGNFNonTerminal
+  { _productions :: DM.DMap (NF ctx t) (DGNFProd m t a),
+    _null :: Maybe a
+  }
+
+epsNonTerminal :: a -> DGNFNonTerminal m ctx t a
+epsNonTerminal a = DGNFNonTerminal DM.empty (Just a)
+
+tokenNonTerminal :: t a -> DGNFNonTerminal m ctx t a
+tokenNonTerminal tok = DGNFNonTerminal (DM.singleton (Term tok) prod) Nothing
+  where
+    prod :: DGNFProd m t a a
+    prod = DGNFProd (Nil ()) const
+
+data DGNFGrammar m ctx t a = DGNFGrammar
+  { _start :: NonTerminalId m a,
+    _nonterminals :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
+  }
+
+normalize' :: (PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
+normalize' (gr, _) =
+  newTag >>= \n -> case gr of
+    Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
+    Tok t -> return $ DGNFGrammar n (DM.singleton n (tokenNonTerminal t))
+    _ -> todo_
+
+{-
 data NF :: [Type] -> (Type -> Type) -> Type where
   EpsProd :: NF ctx t
   TerminalProd :: t a -> [NonTerminalId] -> NF ctx t
@@ -54,7 +105,6 @@ elimClosedNF fEps fTerm = \case
   EpsProd -> fEps
   TerminalProd t ns -> fTerm t ns
   VarProd t _ -> case t of {}
-
 
 instance (Show (Some t)) => Show (NF ctx t) where
   show EpsProd = "eps"
@@ -174,3 +224,4 @@ append nf c = case nf of
   EpsProd -> Nothing
   (TerminalProd t ns) -> Just $ TerminalProd t (ns ++ c)
   (VarProd v ns) -> Just $ VarProd v (ns ++ c)
+-}

@@ -5,10 +5,11 @@ module Hasp.Ctx where
 
 import Data.Kind (Type)
 import Unsafe.Coerce (unsafeCoerce)
+import Data.GADT.Compare.TH
+import Data.GADT.Show.TH
 
-{- |
- Datatypes representing de Brujin indices and contexts, and helper functions for converting from HOAS to de Brujin indices.
--}
+-- |
+-- Datatypes representing de Brujin indices and contexts, and helper functions for converting from HOAS to de Brujin indices.
 data Ctx :: [Type] -> Type where
   CtxZ :: Ctx '[]
   CtxS :: Ctx ctx -> Ctx (a ': ctx)
