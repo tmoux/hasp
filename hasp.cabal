@@ -63,6 +63,7 @@ library
     Hasp.Char
     Hasp.ClosedDgnf
     Hasp.Combinators
+    Hasp.CreateParser
     Hasp.Ctx
     Hasp.DgnfParser
     Hasp.Examples.Dyck

@@ -76,6 +76,9 @@ data DGNFGrammar m ctx t a = DGNFGrammar
     _nonterminals :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
   }
 
+normalize :: (PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m '[] t a)
+normalize = todo_
+
 normalize' :: (PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
 normalize' (gr, _) =
   newTag >>= \n -> case gr of
