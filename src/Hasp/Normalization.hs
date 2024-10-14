@@ -92,7 +92,7 @@ normalize' (gr, _) =
     Seq a b -> do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
-      let DGNFNonTerminal mp null = g1 ! n1
+      let DGNFNonTerminal mp _ = g1 ! n1
           -- TODO: we can guarantee that n1 doesn't have any epsilon?
           n2seq = Cons n2 (Nil ()) const
           nmp = DM.map (`append` n2seq) mp
