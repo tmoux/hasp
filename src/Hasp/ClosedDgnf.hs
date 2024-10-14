@@ -15,7 +15,7 @@ import Prelude hiding (null)
 --  First, if the context is empty, NFs can only be terminals, not variables:
 
 data NonTerminal m t a = NonTerminal
-  { _closed_productions :: DM.DMap t (DGNFProd m t a),
+  { _closed_productions :: DM.DMap t (DGNFProd m a),
     _closed_null :: Maybe a
   }
 
@@ -54,7 +54,7 @@ resolveNonTerm env (NonTerminal prods null) =
 
 resolveProd ::
   DM.DMap (NonTerminalId m) (NonTerminal m t) ->
-  DGNFProd m t a b ->
+  DGNFProd m a b ->
   R.Prod t a b
 resolveProd env (DGNFProd ntseq f) =
   let ntseq' = resolveNTSeq env ntseq
@@ -62,7 +62,7 @@ resolveProd env (DGNFProd ntseq f) =
 
 resolveNTSeq ::
   DM.DMap (NonTerminalId m) (NonTerminal m t) ->
-  DGNFNTSeq m t a ->
+  DGNFNTSeq m a ->
   R.NTSeq t a
 resolveNTSeq _ (Nil a) = R.Nil a
 resolveNTSeq env (Cons n ns f) = R.Cons (resolveNonTerm env (env ! n)) (resolveNTSeq env ns) f

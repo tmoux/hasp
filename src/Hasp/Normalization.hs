@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Hasp.Normalization where
@@ -29,12 +28,12 @@ import Prelude hiding (null)
 type NonTerminalId m = Tag (PrimState m)
 
 -- Represents a sequence of nonterminals n_1 n_2 ... n_i and the associated semantic actions
-data DGNFNTSeq :: (Type -> Type) -> (Type -> Type) -> Type -> Type where
-  Nil :: a -> DGNFNTSeq m t a
-  Cons :: NonTerminalId m b -> DGNFNTSeq m t c -> (b -> c -> a) -> DGNFNTSeq m t a
+data DGNFNTSeq :: (Type -> Type) -> Type -> Type where
+  Nil :: a -> DGNFNTSeq m a
+  Cons :: NonTerminalId m b -> DGNFNTSeq m c -> (b -> c -> a) -> DGNFNTSeq m a
 
-data DGNFProd :: (Type -> Type) -> (Type -> Type) -> Type -> Type -> Type where
-  DGNFProd :: DGNFNTSeq m t c -> (b -> c -> a) -> DGNFProd m t a b
+data DGNFProd :: (Type -> Type) -> Type -> Type -> Type where
+  DGNFProd :: DGNFNTSeq m c -> (b -> c -> a) -> DGNFProd m a b
 
 data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
@@ -45,7 +44,7 @@ data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 --   gcompare = todo_
 
 data DGNFNonTerminal m ctx t a where
-  DGNFNonTerminal :: DM.DMap (NF ctx t) (DGNFProd m t a) -> Maybe a -> DGNFNonTerminal m ctx t a
+  DGNFNonTerminal :: DM.DMap (NF ctx t) (DGNFProd m a) -> Maybe a -> DGNFNonTerminal m ctx t a
 
 -- Is this instance needed?
 -- instance Functor (DGNFNTSeq m t) where
@@ -54,13 +53,12 @@ data DGNFNonTerminal m ctx t a where
 --
 
 -- awkward to write a Functor instance
-fmapDGNFProd :: (a -> d) -> DGNFProd m t a b -> DGNFProd m t d b
+fmapDGNFProd :: (a -> d) -> DGNFProd m a b -> DGNFProd m d b
 fmapDGNFProd f (DGNFProd ns g) = DGNFProd ns ((f .) . g)
 
 --
 instance Functor (DGNFNonTerminal m ctx t) where
-   fmap f (DGNFNonTerminal prods null) = DGNFNonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
-
+  fmap f (DGNFNonTerminal prods null) = DGNFNonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
 
 epsNonTerminal :: a -> DGNFNonTerminal m ctx t a
 epsNonTerminal a = DGNFNonTerminal DM.empty (Just a)
@@ -68,13 +66,13 @@ epsNonTerminal a = DGNFNonTerminal DM.empty (Just a)
 tokenNonTerminal :: t a -> DGNFNonTerminal m ctx t a
 tokenNonTerminal tok = DGNFNonTerminal (DM.singleton (Term tok) prod) Nothing
   where
-    prod :: DGNFProd m t a a
+    prod :: DGNFProd m a a
     prod = DGNFProd (Nil ()) const
 
 varNonTerminal :: Index ctx a -> DGNFNonTerminal m ctx t a
 varNonTerminal idx = DGNFNonTerminal (DM.singleton (NFVar idx) prod) Nothing
   where
-    prod :: DGNFProd m t a a
+    prod :: DGNFProd m a a
     prod = DGNFProd (Nil ()) const
 
 data DGNFGrammar m ctx t a = DGNFGrammar
@@ -91,7 +89,15 @@ normalize' (gr, _) =
     Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
     Tok t -> return $ DGNFGrammar n (DM.singleton n (tokenNonTerminal t))
     Bot -> return $ DGNFGrammar n DM.empty
-    Seq a b -> todo_
+    Seq a b -> do
+      DGNFGrammar n1 g1 <- normalize' a
+      DGNFGrammar n2 g2 <- normalize' b
+      let DGNFNonTerminal mp null = g1 ! n1
+          -- TODO: we can guarantee that n1 doesn't have any epsilon?
+          n2seq = Cons n2 (Nil ()) const
+          nmp = DM.map (`append` n2seq) mp
+          nNonTerm = DGNFNonTerminal nmp Nothing
+      return $ DGNFGrammar n (DM.unions [DM.singleton n nNonTerm, g1, g2])
     Alt a b -> todo_
     Fix g -> todo_
     Map f x -> do
@@ -237,3 +243,15 @@ append nf c = case nf of
   (TerminalProd t ns) -> Just $ TerminalProd t (ns ++ c)
   (VarProd v ns) -> Just $ VarProd v (ns ++ c)
 -}
+
+appendNTSeq :: DGNFNTSeq m a -> DGNFNTSeq m b -> DGNFNTSeq m (a, b)
+appendNTSeq (Nil a) (Nil b) = Nil (a, b)
+appendNTSeq (Cons a ns f) n =
+  let ns' = appendNTSeq ns n
+   in Cons a ns' (\d (c, b) -> (f d c, b))
+appendNTSeq (Nil a) (Cons b ns f) = Cons b ns (\d c -> (a, f d c))
+
+-- Given: c -> c1 -> a
+-- c -> (c1, b) -> (a, b)
+append :: DGNFProd m a c -> DGNFNTSeq m b -> DGNFProd m (a, b) c
+append (DGNFProd ns1 f) ns2 = DGNFProd (appendNTSeq ns1 ns2) (\c (d, b) -> (f c d, b))
