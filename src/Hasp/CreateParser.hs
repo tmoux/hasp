@@ -18,11 +18,12 @@ import Hasp.Typecheck (typecheck)
 import Hasp.Types (Tp)
 
 convertDGNF :: (Stream s t, GShow t, GCompare t) => Grammar '[] t a (Tp (Some t)) -> Parser s a
-convertDGNF g = runST $ do
-  normalized <- normalize g
-  let closed = convertToClosed normalized
-      resolved = resolve closed
-  return (parserFromNT resolved)
+convertDGNF g = runST $ parserFromNT . resolve . convertToClosed <$> normalize g
+
+  -- normalized <- normalize g
+  -- let closed = convertToClosed normalized
+  --     resolved = resolve closed
+  -- return (parserFromNT resolved)
 
 makeParserDGNF :: (Stream s t, GShow t, GCompare t) => Hoas t a -> Parser s a
 makeParserDGNF p = case parser of

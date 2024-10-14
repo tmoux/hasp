@@ -71,13 +71,19 @@ tokenNonTerminal tok = DGNFNonTerminal (DM.singleton (Term tok) prod) Nothing
     prod :: DGNFProd m t a a
     prod = DGNFProd (Nil ()) const
 
+varNonTerminal :: Index ctx a -> DGNFNonTerminal m ctx t a
+varNonTerminal idx = DGNFNonTerminal (DM.singleton (NFVar idx) prod) Nothing
+  where
+    prod :: DGNFProd m t a a
+    prod = DGNFProd (Nil ()) const
+
 data DGNFGrammar m ctx t a = DGNFGrammar
   { _start :: NonTerminalId m a,
     _nonterminals :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
   }
 
 normalize :: (PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m '[] t a)
-normalize = todo_
+normalize = normalize'
 
 normalize' :: (PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
 normalize' (gr, _) =
@@ -85,10 +91,13 @@ normalize' (gr, _) =
     Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
     Tok t -> return $ DGNFGrammar n (DM.singleton n (tokenNonTerminal t))
     Bot -> return $ DGNFGrammar n DM.empty
+    Seq a b -> todo_
+    Alt a b -> todo_
+    Fix g -> todo_
     Map f x -> do
       DGNFGrammar n' x' <- normalize' x
       return $ DGNFGrammar n (DM.insert n (f <$> (x' ! n')) x')
-    _ -> todo_
+    Var x -> return $ DGNFGrammar n (DM.singleton n (varNonTerminal x))
 
 {-
 data NF :: [Type] -> (Type -> Type) -> Type where
