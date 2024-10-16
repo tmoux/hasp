@@ -2,6 +2,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Hasp.Normalization where
 
@@ -14,6 +15,7 @@ import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
+import Control.Applicative ((<|>))
 
 -- Type of DGNF:
 -- A DGNF normal form is either an epsilon, a terminal followed by several nonterminals (t n_1 n_2 ...)
@@ -37,14 +39,25 @@ data DGNFProd :: (Type -> Type) -> Type -> Type -> Type where
 
 data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
--- instance (GEq t) => GEq (NF ctx t) where
---   geq = todo_
---
--- instance (GCompare t) => GCompare (NF ctx t) where
---   gcompare = todo_
+instance (GEq t) => GEq (NF ctx t) where
+  (Term a) `geq` (Term b) = a `geq` b
+  (NFVar a) `geq` (NFVar b) = a `geq` b
+  _ `geq` _ = Nothing
+
+instance (GCompare t) => GCompare (NF ctx t) where
+  (Term a) `gcompare` (Term b) = a `gcompare` b
+  (NFVar a) `gcompare` (NFVar b) = a `gcompare` b
+  (Term _) `gcompare` (NFVar _) = GLT
+  (NFVar _) `gcompare` (Term _) = GGT
 
 data DGNFNonTerminal m ctx t a where
   DGNFNonTerminal :: DM.DMap (NF ctx t) (DGNFProd m a) -> Maybe a -> DGNFNonTerminal m ctx t a
+
+-- Merge two nonterminals (assuming not both have epsilon)
+instance (GCompare t) => Semigroup (DGNFNonTerminal m ctx t a) where
+  DGNFNonTerminal m1 e1 <> DGNFNonTerminal m2 e2 = case (e1, e2) of
+    (Just _, Just _) -> error "tried to merge two nonterminals with epsilon"
+    _ -> DGNFNonTerminal (m1 <> m2) (e1 <|> e2)
 
 -- Is this instance needed?
 -- instance Functor (DGNFNTSeq m t) where
@@ -80,10 +93,10 @@ data DGNFGrammar m ctx t a = DGNFGrammar
     _nonterminals :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
   }
 
-normalize :: (PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m '[] t a)
+normalize :: (GCompare t, PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m '[] t a)
 normalize = normalize'
 
-normalize' :: (PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
+normalize' :: (GCompare t, PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
 normalize' (gr, _) =
   newTag >>= \n -> case gr of
     Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
@@ -98,7 +111,10 @@ normalize' (gr, _) =
           nmp = DM.map (`append` n2seq) mp
           nNonTerm = DGNFNonTerminal nmp Nothing
       return $ DGNFGrammar n (DM.unions [DM.singleton n nNonTerm, g1, g2])
-    Alt a b -> todo_
+    Alt a b -> do
+      DGNFGrammar n1 g1 <- normalize' a
+      DGNFGrammar n2 g2 <- normalize' b
+      return $ DGNFGrammar n (DM.unions [DM.singleton n ((g1 ! n1) <> (g2 ! n2)), g1, g2])
     Fix g -> todo_
     Map f x -> do
       DGNFGrammar n' x' <- normalize' x

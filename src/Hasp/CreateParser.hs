@@ -13,11 +13,12 @@ import Hasp.ClosedDgnf (convertToClosed, resolve)
 import Hasp.Grammar (Grammar)
 import Hasp.Hoas (Hoas, eps, toTerm, tok)
 import Hasp.Normalization (normalize)
-import Hasp.Parser (Parser)
+import Hasp.Parser (Parser, parse)
 import Hasp.Resolved (parserFromNT)
 import Hasp.Stream (Stream, Tag (Tag))
 import Hasp.Typecheck (typecheck)
 import Hasp.Types (Tp)
+import Control.Applicative ((<|>))
 
 convertDGNF :: (Stream s t, GShow t, GCompare t) => Grammar '[] t a (Tp (Some t)) -> Parser s a
 convertDGNF g = runST $ parserFromNT . resolve . convertToClosed <$> normalize g
@@ -39,10 +40,14 @@ makeParserDGNF p = case parser of
 -- parsing test
 hoas :: Hoas (Tag Char) (Char, Char)
 -- hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b')
-hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b') <* tok (Tag 'z')
+-- hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b') <* tok (Tag 'z')
+hoas = (,) <$> (tok (Tag 'a') <|> tok (Tag 'b')) <*> tok (Tag 'z')
 
 parser1 :: Parser T.Text (Char, Char)
 parser1 = makeParserDGNF hoas
 
 s :: T.Text
-s = "abza"
+s = "azbza"
+
+ans :: Maybe ((Char, Char), T.Text)
+ans = parse parser1 s
