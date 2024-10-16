@@ -20,9 +20,8 @@ instance Arbitrary Dyck where
 main :: IO ()
 main = do
   size : len : _ <- (fmap . fmap) read getArgs
-  let
-    go = do
-      gen <- show <$> (generate (resize size arbitrary) :: IO Dyck)
-      if len <= length gen && length gen <= len + 1000 then return gen else go
+  let go = do
+        gen <- show <$> (generate (resize size arbitrary) :: IO Dyck)
+        if len <= length gen && length gen <= len + 1000 then return gen else go
   gen <- go
   putStrLn gen

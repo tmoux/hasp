@@ -2,20 +2,19 @@
 
 module Hasp.Test where
 
+import Control.Monad.ST
 import Data.Dependent.Map
 import Data.Dependent.Sum
+import Data.Kind (Type)
 import Data.Unique.Tag
 import Hasp.Examples.Sexp
 import Hasp.Hoas
-import Data.Kind (Type)
-import Control.Monad.ST
 
 data Gadt :: Type -> Type where
   GadtCon :: a -> Gadt a
 
-instance Show a => Show (Gadt a) where
+instance (Show a) => Show (Gadt a) where
   show (GadtCon a) = show a
-
 
 main :: ST s (Gadt Bool)
 main = do
@@ -23,15 +22,16 @@ main = do
   y <- newTag
   -- z <- newTag
   let m1 = fromList [x :=> GadtCon True, y :=> GadtCon "hello"]
-      -- m2 = fromList [x :=> (17 :: Int), z :=> (True, x)]
+  -- m2 = fromList [x :=> (17 :: Int), z :=> (True, x)]
   -- the type checker would (rightly) reject this line:
   -- m3 = singleton y ("foo", "bar")
 
   return (m1 ! x)
-  -- print (m1 ! x)
-  -- print (m1 ! y)
-  -- print (m2 ! x)
-  -- print (m1 ! snd (m2 ! z))
+
+-- print (m1 ! x)
+-- print (m1 ! y)
+-- print (m2 ! x)
+-- print (m1 ! snd (m2 ! z))
 
 p :: Hoas TTag ()
 -- p = eps 0

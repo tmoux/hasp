@@ -1,11 +1,12 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# LANGUAGE InstanceSigs #-}
 
 module Hasp.Normalization where
 
+import Control.Applicative ((<|>))
 import Control.Monad.Primitive (PrimMonad (PrimState))
 import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
@@ -15,7 +16,6 @@ import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
-import Control.Applicative ((<|>))
 
 -- Type of DGNF:
 -- A DGNF normal form is either an epsilon, a terminal followed by several nonterminals (t n_1 n_2 ...)

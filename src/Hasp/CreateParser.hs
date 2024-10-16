@@ -3,6 +3,7 @@
 
 module Hasp.CreateParser where
 
+import Control.Applicative ((<|>))
 import Control.Monad.Except (runExcept)
 import Control.Monad.ST (runST)
 import Data.GADT.Compare (GCompare)
@@ -18,7 +19,6 @@ import Hasp.Resolved (parserFromNT)
 import Hasp.Stream (Stream, Tag (Tag))
 import Hasp.Typecheck (typecheck)
 import Hasp.Types (Tp)
-import Control.Applicative ((<|>))
 
 convertDGNF :: (Stream s t, GShow t, GCompare t) => Grammar '[] t a (Tp (Some t)) -> Parser s a
 convertDGNF g = runST $ parserFromNT . resolve . convertToClosed <$> normalize g
