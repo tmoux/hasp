@@ -3,7 +3,9 @@
 
 module Hasp.Ctx where
 
+import Data.GADT.Compare (GCompare (..), GEq (..), GOrdering (..))
 import Data.Kind (Type)
+import Data.Type.Equality ((:~:) (..))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- |
@@ -17,6 +19,17 @@ data Index :: [Type] -> Type -> Type where
   IndexS :: Index ctx a -> Index (b ': ctx) a
 
 deriving instance Show (Index ctx a)
+
+instance GEq (Index ctx) where
+  IndexZ `geq` IndexZ = Just Refl
+  (IndexS a) `geq` (IndexS b) = a `geq` b
+  _ `geq` _ = Nothing
+
+instance GCompare (Index ctx) where
+  IndexZ `gcompare` IndexZ = GEQ
+  IndexZ `gcompare` (IndexS _) = GLT
+  (IndexS _) `gcompare` IndexZ = GGT
+  (IndexS a) `gcompare` (IndexS b) = a `gcompare` b
 
 len :: Ctx n -> Int
 len CtxZ = 0
