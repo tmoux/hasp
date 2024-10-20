@@ -38,9 +38,6 @@ data DGNFNTSeq :: (Type -> Type) -> Type -> Type where
 data DGNFProd :: (Type -> Type) -> Type -> Type -> Type where
   DGNFProd :: DGNFNTSeq m c -> (b -> c -> a) -> DGNFProd m a b
 
-mapDGNFProd :: (a -> r) -> DGNFProd m a b -> DGNFProd m r b
-mapDGNFProd f (DGNFProd ns g) = DGNFProd ns ((f .) . g)
-
 data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
 instance (GEq t) => GEq (NF ctx t) where
@@ -80,9 +77,11 @@ instance (GCompare t) => Semigroup (DGNFNonTerminal m ctx t a) where
 fmapDGNFProd :: (a -> d) -> DGNFProd m a b -> DGNFProd m d b
 fmapDGNFProd f (DGNFProd ns g) = DGNFProd ns ((f .) . g)
 
---
 instance Functor (DGNFNonTerminal m ctx t) where
   fmap f (DGNFNonTerminal prods null) = DGNFNonTerminal (DM.map (fmapDGNFProd f) prods) (f <$> null)
+
+emptyNonTerminal :: DGNFNonTerminal m ctx t a
+emptyNonTerminal = DGNFNonTerminal DM.empty Nothing
 
 epsNonTerminal :: a -> DGNFNonTerminal m ctx t a
 epsNonTerminal a = DGNFNonTerminal DM.empty (Just a)
@@ -112,12 +111,12 @@ normalize' (gr, _) =
   newTag >>= \n -> case gr of
     Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
     Tok t -> return $ DGNFGrammar n (DM.singleton n (tokenNonTerminal t))
-    Bot -> return $ DGNFGrammar n DM.empty
+    Bot -> return $ DGNFGrammar n (DM.singleton n emptyNonTerminal)
     Seq a b -> do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
       let DGNFNonTerminal mp _ = fromMaybe (error "seq") (DM.lookup n1 g1) -- g1 ! n1
-          -- TODO: we can guarantee that n1 doesn't have any epsilon?
+      -- TODO: we can guarantee that n1 doesn't have any epsilon?
           n2seq = Cons n2 (Nil ()) const
           nmp = DM.map (`append` n2seq) mp
           nNonTerm = DGNFNonTerminal nmp Nothing
@@ -137,7 +136,7 @@ normalize' (gr, _) =
           -- Type 2 and Type 3
           f :: NF (a : ctx) t s -> DGNFProd m v s -> DM.DMap (NF ctx t) (DGNFProd m v)
           f (Term t) p = DM.singleton (Term t) p
-          f (NFVar IndexZ) (DGNFProd ns f1) = DM.map (\prod -> mapDGNFProd (uncurry f1) (append prod ns)) originalProdsMap
+          f (NFVar IndexZ) (DGNFProd ns f1) = DM.map (\prod -> fmapDGNFProd (uncurry f1) (append prod ns)) originalProdsMap
           f (NFVar (IndexS i)) p = DM.singleton (NFVar i) p
           fn :: forall v. DGNFNonTerminal m (a ': ctx) t v -> DGNFNonTerminal m ctx t v
           fn (DGNFNonTerminal mp eps) = DGNFNonTerminal (mapKeysWith' f mp) eps

@@ -14,6 +14,7 @@ import Hasp.Stream
 import Hasp.Types
 import Prelude hiding (null, seq)
 
+-- TODO: we can generalize the parser result over Maybe to more general result type (errors, etc)
 newtype Parser s a = P {unP :: s -> Maybe (a, s)}
   deriving (Functor)
 

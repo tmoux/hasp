@@ -10,16 +10,14 @@ import Data.GADT.Compare (GCompare)
 import Data.GADT.Show (GShow)
 import Data.Some (Some)
 import qualified Data.Text as T
-import Debug.Trace (traceStack)
+import Hasp.Char (char)
 import Hasp.ClosedDgnf (convertToClosed, resolve)
-import qualified Hasp.ClosedDgnf as C
 import Hasp.Combinators (between, choice, many)
 import Hasp.Grammar (Grammar)
-import Hasp.Hoas (Hoas, fix, toTerm, tok)
+import Hasp.Hoas (Hoas, bot, eps, fix, toTerm, tok)
 import Hasp.Normalization (normalize)
 import Hasp.Parser (Parser, parse)
 import Hasp.Resolved (parserFromNT)
-import qualified Hasp.Resolved as R
 import Hasp.Stream (Stream, Tag (Tag))
 import Hasp.Typecheck (typecheck)
 import Hasp.Types (Tp)
@@ -42,19 +40,35 @@ makeParserDGNF p = case parser of
       return (convertDGNF typechecked)
 
 -- parsing test
-hoas :: Hoas (Tag Char) Int
+hoas :: Hoas (Tag Char) [Char]
 -- hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b')
 -- hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b') <* tok (Tag 'z')
 -- hoas = (,) <$> (tok (Tag 'a') <|> tok (Tag 'b')) <*> tok (Tag 'z')
 -- hoas = fix $ \p -> (\_ _ -> 1) <$> tok (Tag 'a') <*> p
 
-hoas =
-  (2 <$ tok (Tag '(')) <|> (1 <$ tok (Tag 'a'))
+-- hoas = fix $ \p ->
+--   eps 0
+--     <|> (\x y -> x + y + 1) <$> between (char '(') (char ')') p <*> p
+-- hoas = fix $ \p ->
+--   choice
+--     [ (+ 1) <$ char 'a' <*> p,
+--       1 <$ char 'b'
+--     ]
 
--- choice
---   [ 2 <$ tok (Tag '('),
---     1 <$ tok (Tag 'a')
---   ]
+-- Doesn't work:
+-- hoas = sum <$> many (1 <$ char 'a')
+
+-- hoas = eps 0
+-- Works:
+-- hoas = fix $ \p ->
+--   choice
+--     [ between (tok (Tag '(')) (tok (Tag ')')) ((+ 1) <$> p),
+--       1 <$ tok (Tag 'a')
+--     ]
+
+hoas = fix $ \p -> eps [] <|> ((:) <$> char 'a' <*> p)
+
+-- hoas = ((+) <$> (1 <$ char 'a') <*> (2 <$ char 'b')) <|> eps 0
 
 -- hoas = fix $ \p ->
 --   choice
@@ -62,11 +76,11 @@ hoas =
 --       1 <$ tok (Tag 'a')
 --     ]
 
-parser1 :: Parser T.Text Int
+parser1 :: Parser T.Text [Char]
 parser1 = makeParserDGNF hoas
 
 s :: T.Text
-s = "()"
+s = "aaab"
 
-ans :: Maybe (Int, T.Text)
+ans :: Maybe ([Char], T.Text)
 ans = parse parser1 s
