@@ -7,7 +7,6 @@ import Data.Some
 import Hasp.Parser (Parser (..))
 import Hasp.Stream
 import Prelude hiding (null)
-import Data.GADT.Show (GShow)
 
 -- This is the type of resolved DGNF grammar (no variables from fixed points)
 -- The intention is to make it as easy as possible to convert into a Parser.
@@ -42,8 +41,9 @@ parserFromNT (NonTerminal productions null) =
                 let prodParser :: Parser s a
                     prodParser = parserFromProd a prod
                  in unP prodParser rest
-              Nothing -> null >>= \nullVal -> return (nullVal, rest)
-        Nothing -> Nothing
+              Nothing -> null >>= \nullVal -> return (nullVal, s)
+        Nothing ->
+          null >>= \nullVal -> return (nullVal, s)
     )
 
 parserFromProd :: (Stream s t, GCompare t) => c -> Prod t a c -> Parser s a
