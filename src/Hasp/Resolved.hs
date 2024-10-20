@@ -7,6 +7,7 @@ import Data.Some
 import Hasp.Parser (Parser (..))
 import Hasp.Stream
 import Prelude hiding (null)
+import Data.GADT.Show (GShow)
 
 -- This is the type of resolved DGNF grammar (no variables from fixed points)
 -- The intention is to make it as easy as possible to convert into a Parser.

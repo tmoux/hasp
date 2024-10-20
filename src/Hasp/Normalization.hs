@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Hasp.Normalization where
@@ -10,9 +10,9 @@ import Control.Applicative ((<|>))
 import Control.Monad.Primitive (PrimMonad (PrimState))
 import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
+import Data.Dependent.Sum (DSum (..))
 import Data.Kind (Type)
 import Data.Unique.Tag
-import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
@@ -37,6 +37,9 @@ data DGNFNTSeq :: (Type -> Type) -> Type -> Type where
 data DGNFProd :: (Type -> Type) -> Type -> Type -> Type where
   DGNFProd :: DGNFNTSeq m c -> (b -> c -> a) -> DGNFProd m a b
 
+mapDGNFProd :: (a -> r) -> DGNFProd m a b -> DGNFProd m r b
+mapDGNFProd f (DGNFProd ns g) = DGNFProd ns ((f .) . g)
+
 data NF ctx t a = Term (t a) | NFVar (Index ctx a)
 
 instance (GEq t) => GEq (NF ctx t) where
@@ -53,6 +56,14 @@ instance (GCompare t) => GCompare (NF ctx t) where
 data DGNFNonTerminal m ctx t a where
   DGNFNonTerminal :: DM.DMap (NF ctx t) (DGNFProd m a) -> Maybe a -> DGNFNonTerminal m ctx t a
 
+shift :: DGNFNonTerminal m (c ': ctx) t a -> DGNFNonTerminal m ctx t a
+shift (DGNFNonTerminal mp eps) = DGNFNonTerminal (DM.mapKeysMonotonic shiftNF mp) eps
+  where
+    shiftNF :: NF (c ': ctx) t a -> NF ctx t a
+    shiftNF (Term x) = Term x
+    shiftNF (NFVar IndexZ) = error "unreachable! shift"
+    shiftNF (NFVar (IndexS x)) = NFVar x
+
 -- Merge two nonterminals (assuming not both have epsilon)
 instance (GCompare t) => Semigroup (DGNFNonTerminal m ctx t a) where
   DGNFNonTerminal m1 e1 <> DGNFNonTerminal m2 e2 = case (e1, e2) of
@@ -63,7 +74,6 @@ instance (GCompare t) => Semigroup (DGNFNonTerminal m ctx t a) where
 -- instance Functor (DGNFNTSeq m t) where
 --   fmap f (Nil v) = Nil (f v)
 --   fmap f (Cons n ns g) = Cons n ns ((f .) . g)
---
 
 -- awkward to write a Functor instance
 fmapDGNFProd :: (a -> d) -> DGNFProd m a b -> DGNFProd m d b
@@ -96,7 +106,7 @@ data DGNFGrammar m ctx t a = DGNFGrammar
 normalize :: (GCompare t, PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m '[] t a)
 normalize = normalize'
 
-normalize' :: (GCompare t, PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
+normalize' :: forall t m ctx a d. (GCompare t, PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
 normalize' (gr, _) =
   newTag >>= \n -> case gr of
     Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
@@ -115,7 +125,20 @@ normalize' (gr, _) =
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
       return $ DGNFGrammar n (DM.unions [DM.singleton n ((g1 ! n1) <> (g2 ! n2)), g1, g2])
-    Fix g -> todo_
+    Fix g -> do
+      DGNFGrammar n' g' <- normalize' g
+          -- Type 1
+      let originalProds@(DGNFNonTerminal originalProdsMap _) = shift (g' ! n')
+          -- Type 2 and Type 3
+          f :: NF (a : ctx) t s -> DGNFProd m v s -> DM.DMap (NF ctx t) (DGNFProd m v)
+          f (Term t) p = DM.singleton (Term t) p
+          f (NFVar IndexZ) (DGNFProd ns f1) = DM.map (\prod -> mapDGNFProd (uncurry f1) (append prod ns)) originalProdsMap
+          f (NFVar (IndexS i)) p = DM.singleton (NFVar i) p
+          fn :: forall v. DGNFNonTerminal m (a ': ctx) t v -> DGNFNonTerminal m ctx t v
+          fn (DGNFNonTerminal mp eps) = DGNFNonTerminal (mapKeysWith' f mp) eps
+          types2And3 :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
+          types2And3 = DM.map fn g'
+      return $ DGNFGrammar n (DM.unions [DM.singleton n originalProds, types2And3])
     Map f x -> do
       DGNFGrammar n' x' <- normalize' x
       return $ DGNFGrammar n (DM.insert n (f <$> (x' ! n')) x')
@@ -271,3 +294,6 @@ appendNTSeq (Nil a) (Cons b ns f) = Cons b ns (\d c -> (a, f d c))
 -- c -> (c1, b) -> (a, b)
 append :: DGNFProd m a c -> DGNFNTSeq m b -> DGNFProd m (a, b) c
 append (DGNFProd ns1 f) ns2 = DGNFProd (appendNTSeq ns1 ns2) (\c (d, b) -> (f c d, b))
+
+mapKeysWith' :: (GCompare k2) => (forall v. k1 v -> f v -> DM.DMap k2 f) -> DM.DMap k1 f -> DM.DMap k2 f
+mapKeysWith' f mp = DM.unions (map (\(k :=> v) -> f k v) (DM.assocs mp))

@@ -10,12 +10,16 @@ import Data.GADT.Compare (GCompare)
 import Data.GADT.Show (GShow)
 import Data.Some (Some)
 import qualified Data.Text as T
+import Debug.Trace (traceStack)
 import Hasp.ClosedDgnf (convertToClosed, resolve)
+import qualified Hasp.ClosedDgnf as C
+import Hasp.Combinators (between, choice, many)
 import Hasp.Grammar (Grammar)
-import Hasp.Hoas (Hoas, eps, toTerm, tok)
+import Hasp.Hoas (Hoas, fix, toTerm, tok)
 import Hasp.Normalization (normalize)
 import Hasp.Parser (Parser, parse)
 import Hasp.Resolved (parserFromNT)
+import qualified Hasp.Resolved as R
 import Hasp.Stream (Stream, Tag (Tag))
 import Hasp.Typecheck (typecheck)
 import Hasp.Types (Tp)
@@ -38,16 +42,23 @@ makeParserDGNF p = case parser of
       return (convertDGNF typechecked)
 
 -- parsing test
-hoas :: Hoas (Tag Char) (Char, Char)
+hoas :: Hoas (Tag Char) Int
 -- hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b')
 -- hoas = (,) <$> tok (Tag 'a') <*> tok (Tag 'b') <* tok (Tag 'z')
-hoas = (,) <$> (tok (Tag 'a') <|> tok (Tag 'b')) <*> tok (Tag 'z')
+-- hoas = (,) <$> (tok (Tag 'a') <|> tok (Tag 'b')) <*> tok (Tag 'z')
+-- hoas = fix $ \p -> (\_ _ -> 1) <$> tok (Tag 'a') <*> p
 
-parser1 :: Parser T.Text (Char, Char)
+hoas = fix $ \p ->
+  choice
+    [ between (tok (Tag '(')) (tok (Tag ')')) (sum <$> many p),
+      1 <$ tok (Tag 'a')
+    ]
+
+parser1 :: Parser T.Text Int
 parser1 = makeParserDGNF hoas
 
 s :: T.Text
-s = "azbza"
+s = "()"
 
-ans :: Maybe ((Char, Char), T.Text)
+ans :: Maybe (Int, T.Text)
 ans = parse parser1 s

@@ -1,3 +1,6 @@
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeOperators #-}
+
 module Hasp.Stream where
 
 import Data.Data ((:~:) (..))
