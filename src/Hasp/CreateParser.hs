@@ -48,11 +48,19 @@ hoas :: Hoas (Tag Char) Int
 -- hoas = (,) <$> (tok (Tag 'a') <|> tok (Tag 'b')) <*> tok (Tag 'z')
 -- hoas = fix $ \p -> (\_ _ -> 1) <$> tok (Tag 'a') <*> p
 
-hoas = fix $ \p ->
-  choice
-    [ between (tok (Tag '(')) (tok (Tag ')')) (sum <$> many p),
-      1 <$ tok (Tag 'a')
-    ]
+hoas =
+  (2 <$ tok (Tag '(')) <|> (1 <$ tok (Tag 'a'))
+
+-- choice
+--   [ 2 <$ tok (Tag '('),
+--     1 <$ tok (Tag 'a')
+--   ]
+
+-- hoas = fix $ \p ->
+--   choice
+--     [ between (tok (Tag '(')) (tok (Tag ')')) (sum <$> many p),
+--       1 <$ tok (Tag 'a')
+--     ]
 
 parser1 :: Parser T.Text Int
 parser1 = makeParserDGNF hoas
