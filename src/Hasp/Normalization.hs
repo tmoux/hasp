@@ -8,10 +8,11 @@ module Hasp.Normalization where
 
 import Control.Applicative ((<|>))
 import Control.Monad.Primitive (PrimMonad (PrimState))
-import Data.Dependent.Map ((!))
+-- import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.Dependent.Sum (DSum (..))
 import Data.Kind (Type)
+import Data.Maybe (fromMaybe)
 import Data.Unique.Tag
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
@@ -115,7 +116,7 @@ normalize' (gr, _) =
     Seq a b -> do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
-      let DGNFNonTerminal mp _ = g1 ! n1
+      let DGNFNonTerminal mp _ = fromMaybe (error "seq") (DM.lookup n1 g1) -- g1 ! n1
           -- TODO: we can guarantee that n1 doesn't have any epsilon?
           n2seq = Cons n2 (Nil ()) const
           nmp = DM.map (`append` n2seq) mp
@@ -124,11 +125,15 @@ normalize' (gr, _) =
     Alt a b -> do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
-      return $ DGNFGrammar n (DM.unions [DM.singleton n ((g1 ! n1) <> (g2 ! n2)), g1, g2])
+      let aa = fromMaybe (error "alt 1") (DM.lookup n1 g1)
+      let bb = fromMaybe (error "alt 2") (DM.lookup n2 g2)
+      return $ DGNFGrammar n (DM.unions [DM.singleton n (aa <> bb), g1, g2])
     Fix g -> do
       DGNFGrammar n' g' <- normalize' g
-          -- Type 1
-      let originalProds@(DGNFNonTerminal originalProdsMap _) = shift (g' ! n')
+      -- Type 1
+      let originalProds@(DGNFNonTerminal originalProdsMap _) =
+            shift $ fromMaybe (error "AAA") (DM.lookup n' g')
+          -- shift (g' ! n')
           -- Type 2 and Type 3
           f :: NF (a : ctx) t s -> DGNFProd m v s -> DM.DMap (NF ctx t) (DGNFProd m v)
           f (Term t) p = DM.singleton (Term t) p
@@ -141,7 +146,8 @@ normalize' (gr, _) =
       return $ DGNFGrammar n (DM.unions [DM.singleton n originalProds, types2And3])
     Map f x -> do
       DGNFGrammar n' x' <- normalize' x
-      return $ DGNFGrammar n (DM.insert n (f <$> (x' ! n')) x')
+      let xx = fromMaybe (error "AAA") (DM.lookup n' x')
+      return $ DGNFGrammar n (DM.insert n (f <$> xx) x')
     Var x -> return $ DGNFGrammar n (DM.singleton n (varNonTerminal x))
 
 {-

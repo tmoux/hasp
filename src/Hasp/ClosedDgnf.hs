@@ -3,9 +3,10 @@
 
 module Hasp.ClosedDgnf where
 
-import Data.Dependent.Map ((!))
+-- import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.GADT.Compare (GCompare)
+import Data.Maybe (fromMaybe)
 import Hasp.Normalization
 import qualified Hasp.Resolved as R
 import Prelude hiding (null)
@@ -42,7 +43,9 @@ convertToClosed (DGNFGrammar start nonterms) =
 -- this involves resolving the NonTerminalIds to NonTerminals.
 
 resolve :: Grammar m t a -> R.NonTerminal t a
-resolve (Grammar start nonterms) = resolveNonTerm nonterms (nonterms ! start)
+resolve (Grammar start nonterms) =
+  let x = fromMaybe (error "resolve main") (DM.lookup start nonterms)
+   in resolveNonTerm nonterms x
 
 resolveNonTerm ::
   DM.DMap (NonTerminalId m) (NonTerminal m t) ->
@@ -65,4 +68,6 @@ resolveNTSeq ::
   DGNFNTSeq m a ->
   R.NTSeq t a
 resolveNTSeq _ (Nil a) = R.Nil a
-resolveNTSeq env (Cons n ns f) = R.Cons (resolveNonTerm env (env ! n)) (resolveNTSeq env ns) f
+resolveNTSeq env (Cons n ns f) =
+  let x = fromMaybe (error "resolve") (DM.lookup n env)
+   in R.Cons (resolveNonTerm env x) (resolveNTSeq env ns) f
