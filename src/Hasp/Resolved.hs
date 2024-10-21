@@ -1,8 +1,11 @@
 module Hasp.Resolved where
 
 import qualified Data.Dependent.Map as DM
+import Data.Dependent.Sum (DSum (..))
 import Data.GADT.Compare
+import Data.GADT.Show (GShow (..), defaultGshowsPrec)
 import Data.Kind (Type)
+import Data.Maybe (isJust)
 import Data.Some
 import Hasp.Parser (Parser (..))
 import Hasp.Stream
@@ -29,6 +32,27 @@ data NonTerminal t a = NonTerminal
   { _productions :: DM.DMap t (Prod t a),
     _null :: Maybe a
   }
+
+instance (GShow t) => Show (NTSeq t a) where
+  show s = show (map show (ls s))
+    where
+      ls :: forall z. NTSeq t z -> [Some (NonTerminal t)]
+      ls (Nil _) = []
+      ls (Cons x xs _) = mkSome x : ls xs
+
+instance (GShow t) => Show (Prod t a b) where
+  show (Prod ns _) = "Prod " ++ show ns
+
+instance (GShow t) => GShow (Prod t a) where
+  gshowsPrec = defaultGshowsPrec
+
+instance (GShow t) => Show (NonTerminal t a) where
+  show (NonTerminal prods null) = "NonTerminal " ++ show ls ++ "\n" ++ "eps: " ++ show (isJust null) ++ "\n"
+    where
+      ls = map (\(k :=> v) -> (mkSome k, mkSome v)) (DM.assocs prods)
+
+instance (GShow t) => GShow (NonTerminal t) where
+  gshowsPrec = defaultGshowsPrec
 
 parserFromNT :: forall s t a. (Stream s t, GCompare t) => NonTerminal t a -> Parser s a
 parserFromNT (NonTerminal productions null) =
