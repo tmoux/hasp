@@ -65,6 +65,7 @@ library
     Hasp.Combinators
     Hasp.CreateParser
     Hasp.Ctx
+    Hasp.DgnfDebug
     Hasp.DgnfParser
     Hasp.Examples.Dyck
     Hasp.Examples.LexStream
