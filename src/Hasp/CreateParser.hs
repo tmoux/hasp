@@ -3,24 +3,21 @@
 
 module Hasp.CreateParser where
 
-import Control.Applicative ((<|>))
 import Control.Monad.Except (runExcept)
 import Control.Monad.ST (runST)
 import Data.GADT.Compare (GCompare)
 import Data.GADT.Show (GShow)
 import Data.Some (Some)
 import qualified Data.Text as T
-import Hasp.Char (char)
 import Hasp.ClosedDgnf (convertToClosed, resolve)
-import Hasp.Combinators (between, choice, many)
+import Hasp.Combinators (many, between, choice)
 import qualified Hasp.DgnfDebug as D
 import Hasp.Grammar (Grammar)
-import Hasp.Hoas (Hoas, bot, eps, fix, toTerm, tok)
+import Hasp.Hoas (Hoas, toTerm, fix, tok)
 import Hasp.Normalization (normalize)
 import Hasp.Parser (Parser, parse)
 import Hasp.Resolved (parserFromNT)
-import qualified Hasp.Resolved as R
-import Hasp.Stream (Stream, Tag (Tag))
+import Hasp.Stream (Stream, Tag (..))
 import Hasp.Typecheck (typecheck)
 import Hasp.Types (Tp)
 
@@ -70,6 +67,7 @@ hoas :: Hoas (Tag Char) Int
 --     ]
 
 -- Doesn't work:
+-- Works now?
 -- hoas = sum <$> many (1 <$ char 'a')
 
 -- hoas = eps 0
@@ -80,15 +78,15 @@ hoas :: Hoas (Tag Char) Int
 --       1 <$ tok (Tag 'a')
 --     ]
 
-hoas = fix $ \p -> eps 0 <|> ((+ 1) <$ char 'a' <*> p)
+-- hoas = fix $ \p -> eps 0 <|> ((+ 1) <$ char 'a' <*> p)
 
 -- hoas = ((+) <$> (1 <$ char 'a') <*> (2 <$ char 'b')) <|> eps 0
 
--- hoas = fix $ \p ->
---   choice
---     [ between (tok (Tag '(')) (tok (Tag ')')) (sum <$> many p),
---       1 <$ tok (Tag 'a')
---     ]
+hoas = fix $ \p ->
+  choice
+    [ between (tok (Tag '(')) (tok (Tag ')')) (sum <$> many p),
+      1 <$ tok (Tag 'a')
+    ]
 
 parser1 :: Parser T.Text Int
 parser1 = makeParserDGNF hoas
@@ -97,7 +95,8 @@ r1 :: D.Grammar (Tag Char)
 r1 = makeDebug hoas
 
 s :: T.Text
-s = "aaab"
+-- s = "aaab"
+s = "(a(a)(aa)(((a))))abc"
 
 ans :: Maybe (Int, T.Text)
 ans = parse parser1 s

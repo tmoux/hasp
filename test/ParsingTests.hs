@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+{-# HLINT ignore "Redundant bracket" #-}
+
 module ParsingTests where
 
 import Data.GADT.Compare

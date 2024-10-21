@@ -8,7 +8,6 @@ module Hasp.Normalization where
 
 import Control.Applicative ((<|>))
 import Control.Monad.Primitive (PrimMonad (PrimState))
--- import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.Dependent.Sum (DSum (..))
 import Data.Kind (Type)
@@ -17,7 +16,6 @@ import Data.Unique.Tag
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
-import Unsafe.Coerce (unsafeCoerce)
 
 -- Type of DGNF:
 -- A DGNF normal form is either an epsilon, a terminal followed by several nonterminals (t n_1 n_2 ...)
@@ -145,11 +143,11 @@ normalize' (gr, _) =
               -- Update epsilon transition if:
               -- - has an alpha (IndexZ) [implies that there is nothing after it]
               -- - alpha has an epsilon transition
+              -- TODO: make sure this is correct
               eps' :: Maybe v
               eps' = case DM.lookup (NFVar IndexZ) mp of
-                -- TODO: We should check that the transition is n -> alpha [], in which case v ~ a
-                Just _ -> unsafeCoerce originalEps
-                Nothing -> Nothing
+                Just (DGNFProd (Nil val) pf) -> originalEps >>= \e -> return $ pf e val
+                _ -> Nothing
           types2And3 :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
           types2And3 = DM.map fn g'
       return $ DGNFGrammar n (DM.unions [DM.singleton n originalProds, types2And3])

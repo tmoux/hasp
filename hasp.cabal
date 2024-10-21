@@ -77,7 +77,6 @@ library
     Hasp.Parser
     Hasp.Resolved
     Hasp.Stream
-    Hasp.Test
     Hasp.TH
     Hasp.Typecheck
     Hasp.Types
