@@ -72,7 +72,7 @@ hoas :: Hoas (Tag Char) Int
 -- Doesn't work:
 -- hoas = sum <$> many (1 <$ char 'a')
 
-hoas = eps 0
+-- hoas = eps 0
 -- Works:
 -- hoas = fix $ \p ->
 --   choice
@@ -80,7 +80,7 @@ hoas = eps 0
 --       1 <$ tok (Tag 'a')
 --     ]
 
--- hoas = fix $ \p -> eps [] <|> ((:) <$> char 'a' <*> p)
+hoas = fix $ \p -> eps 0 <|> ((+ 1) <$ char 'a' <*> p)
 
 -- hoas = ((+) <$> (1 <$ char 'a') <*> (2 <$ char 'b')) <|> eps 0
 

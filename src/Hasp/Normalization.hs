@@ -17,6 +17,7 @@ import Data.Unique.Tag
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
+import Unsafe.Coerce (unsafeCoerce)
 
 -- Type of DGNF:
 -- A DGNF normal form is either an epsilon, a terminal followed by several nonterminals (t n_1 n_2 ...)
@@ -130,7 +131,7 @@ normalize' (gr, _) =
     Fix g -> do
       DGNFGrammar n' g' <- normalize' g
       -- Type 1
-      let originalProds@(DGNFNonTerminal originalProdsMap _) =
+      let originalProds@(DGNFNonTerminal originalProdsMap originalEps) =
             shift $ fromMaybe (error "AAA") (DM.lookup n' g')
           -- shift (g' ! n')
           -- Type 2 and Type 3
@@ -139,7 +140,16 @@ normalize' (gr, _) =
           f (NFVar IndexZ) (DGNFProd ns f1) = DM.map (\prod -> fmapDGNFProd (uncurry f1) (append prod ns)) originalProdsMap
           f (NFVar (IndexS i)) p = DM.singleton (NFVar i) p
           fn :: forall v. DGNFNonTerminal m (a ': ctx) t v -> DGNFNonTerminal m ctx t v
-          fn (DGNFNonTerminal mp eps) = DGNFNonTerminal (mapKeysWith' f mp) eps
+          fn (DGNFNonTerminal mp eps) = DGNFNonTerminal (mapKeysWith' f mp) (eps <|> eps')
+            where
+              -- Update epsilon transition if:
+              -- - has an alpha (IndexZ) [implies that there is nothing after it]
+              -- - alpha has an epsilon transition
+              eps' :: Maybe v
+              eps' = case DM.lookup (NFVar IndexZ) mp of
+                -- TODO: We should check that the transition is n -> alpha [], in which case v ~ a
+                Just _ -> unsafeCoerce originalEps
+                Nothing -> Nothing
           types2And3 :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
           types2And3 = DM.map fn g'
       return $ DGNFGrammar n (DM.unions [DM.singleton n originalProds, types2And3])
