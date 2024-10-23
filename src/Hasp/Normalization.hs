@@ -12,7 +12,10 @@ import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.Dependent.Sum (DSum (..))
 import Data.Kind (Type)
+import qualified Data.Set as S
+import Data.Some (Some, mkSome)
 import Data.Unique.Tag
+import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
@@ -116,7 +119,7 @@ normalize' (gr, _) = do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
       let DGNFNonTerminal mp _ = g1 ! n1
-      -- TODO: we can guarantee that n1 doesn't have any epsilon?
+          -- TODO: we can guarantee that n1 doesn't have any epsilon?
           n2seq = Cons n2 (Nil ()) const
           nmp = DM.map (`append` n2seq) mp
           nNonTerm = DGNFNonTerminal nmp Nothing
@@ -155,6 +158,15 @@ normalize' (gr, _) = do
       return $ DM.insert n (f <$> (x' ! n')) x'
     Var x -> return $ DM.singleton n (varNonTerminal x)
   return $ DGNFGrammar n nonterm
+
+prune :: forall m ctx t a. DGNFGrammar m ctx t a -> DGNFGrammar m ctx t a
+prune (DGNFGrammar n mp) =
+  DGNFGrammar
+    n
+    (DM.filterWithKey (\k _ -> S.member (mkSome k) reachableIds) mp)
+  where
+    reachableIds :: S.Set (Some (NonTerminalId m))
+    reachableIds = todo_
 
 {-
 data NF :: [Type] -> (Type -> Type) -> Type where
