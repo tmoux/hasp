@@ -8,10 +8,10 @@ module Hasp.Normalization where
 
 import Control.Applicative ((<|>))
 import Control.Monad.Primitive (PrimMonad (PrimState))
+import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.Dependent.Sum (DSum (..))
 import Data.Kind (Type)
-import Data.Maybe (fromMaybe)
 import Data.Unique.Tag
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
@@ -106,31 +106,30 @@ normalize :: (GCompare t, PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m 
 normalize = normalize'
 
 normalize' :: forall t m ctx a d. (GCompare t, PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
-normalize' (gr, _) =
-  newTag >>= \n -> case gr of
-    Eps a -> return $ DGNFGrammar n (DM.singleton n (epsNonTerminal a))
-    Tok t -> return $ DGNFGrammar n (DM.singleton n (tokenNonTerminal t))
-    Bot -> return $ DGNFGrammar n (DM.singleton n emptyNonTerminal)
+normalize' (gr, _) = do
+  n <- newTag
+  nonterm <- case gr of
+    Eps a -> return $ DM.singleton n (epsNonTerminal a)
+    Tok t -> return $ DM.singleton n (tokenNonTerminal t)
+    Bot -> return $ DM.singleton n emptyNonTerminal
     Seq a b -> do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
-      let DGNFNonTerminal mp _ = fromMaybe (error "seq") (DM.lookup n1 g1) -- g1 ! n1
+      let DGNFNonTerminal mp _ = g1 ! n1
       -- TODO: we can guarantee that n1 doesn't have any epsilon?
           n2seq = Cons n2 (Nil ()) const
           nmp = DM.map (`append` n2seq) mp
           nNonTerm = DGNFNonTerminal nmp Nothing
-      return $ DGNFGrammar n (DM.unions [DM.singleton n nNonTerm, g1, g2])
+      return $ DM.unions [DM.singleton n nNonTerm, g1, g2]
     Alt a b -> do
       DGNFGrammar n1 g1 <- normalize' a
       DGNFGrammar n2 g2 <- normalize' b
-      let aa = fromMaybe (error "alt 1") (DM.lookup n1 g1)
-      let bb = fromMaybe (error "alt 2") (DM.lookup n2 g2)
-      return $ DGNFGrammar n (DM.unions [DM.singleton n (aa <> bb), g1, g2])
+      return $ DM.unions [DM.singleton n ((g1 ! n1) <> (g2 ! n2)), g1, g2]
     Fix g -> do
       DGNFGrammar n' g' <- normalize' g
       -- Type 1
       let originalProds@(DGNFNonTerminal originalProdsMap originalEps) =
-            shift $ fromMaybe (error "AAA") (DM.lookup n' g')
+            shift $ g' ! n'
           -- shift (g' ! n')
           -- Type 2 and Type 3
           f :: NF (a : ctx) t s -> DGNFProd m v s -> DM.DMap (NF ctx t) (DGNFProd m v)
@@ -150,12 +149,12 @@ normalize' (gr, _) =
                 _ -> Nothing
           types2And3 :: DM.DMap (NonTerminalId m) (DGNFNonTerminal m ctx t)
           types2And3 = DM.map fn g'
-      return $ DGNFGrammar n (DM.unions [DM.singleton n originalProds, types2And3])
+      return $ DM.unions [DM.singleton n originalProds, types2And3]
     Map f x -> do
       DGNFGrammar n' x' <- normalize' x
-      let xx = fromMaybe (error "AAA") (DM.lookup n' x')
-      return $ DGNFGrammar n (DM.insert n (f <$> xx) x')
-    Var x -> return $ DGNFGrammar n (DM.singleton n (varNonTerminal x))
+      return $ DM.insert n (f <$> (x' ! n')) x'
+    Var x -> return $ DM.singleton n (varNonTerminal x)
+  return $ DGNFGrammar n nonterm
 
 {-
 data NF :: [Type] -> (Type -> Type) -> Type where

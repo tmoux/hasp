@@ -3,17 +3,12 @@
 
 module Hasp.ClosedDgnf where
 
--- import Data.Dependent.Map ((!))
+import Data.Dependent.Map ((!))
 import qualified Data.Dependent.Map as DM
 import Data.GADT.Compare (GCompare)
-import Data.Maybe (fromMaybe)
 import Hasp.Normalization
 import qualified Hasp.Resolved as R
 import Prelude hiding (null)
-
--- Conversion from DGNF to Resolved:
-
---  First, if the context is empty, NFs can only be terminals, not variables:
 
 data NonTerminal m t a = NonTerminal
   { _closed_productions :: DM.DMap t (DGNFProd m a),
@@ -44,8 +39,7 @@ convertToClosed (DGNFGrammar start nonterms) =
 
 resolve :: Grammar m t a -> R.NonTerminal t a
 resolve (Grammar start nonterms) =
-  let x = fromMaybe (error "resolve main") (DM.lookup start nonterms)
-   in resolveNonTerm nonterms x
+   resolveNonTerm nonterms (nonterms ! start)
 
 resolveNonTerm ::
   DM.DMap (NonTerminalId m) (NonTerminal m t) ->
@@ -69,5 +63,4 @@ resolveNTSeq ::
   R.NTSeq t a
 resolveNTSeq _ (Nil a) = R.Nil a
 resolveNTSeq env (Cons n ns f) =
-  let x = fromMaybe (error "resolve") (DM.lookup n env)
-   in R.Cons (resolveNonTerm env x) (resolveNTSeq env ns) f
+   R.Cons (resolveNonTerm env (env ! n)) (resolveNTSeq env ns) f
