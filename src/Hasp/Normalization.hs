@@ -13,9 +13,8 @@ import qualified Data.Dependent.Map as DM
 import Data.Dependent.Sum (DSum (..))
 import Data.Kind (Type)
 import qualified Data.Set as S
-import Data.Some (Some, mkSome)
+import Data.Some (Some, mkSome, withSome)
 import Data.Unique.Tag
-import Debug.Todo (todo_)
 import Hasp.Ctx (Index (..))
 import Hasp.Grammar (Grammar, Grammar' (..))
 import Prelude hiding (null)
@@ -106,7 +105,7 @@ data DGNFGrammar m ctx t a = DGNFGrammar
   }
 
 normalize :: (GCompare t, PrimMonad m) => Grammar '[] t a d -> m (DGNFGrammar m '[] t a)
-normalize = normalize'
+normalize = (prune <$>) . normalize'
 
 normalize' :: forall t m ctx a d. (GCompare t, PrimMonad m) => Grammar ctx t a d -> m (DGNFGrammar m ctx t a)
 normalize' (gr, _) = do
@@ -166,7 +165,24 @@ prune (DGNFGrammar n mp) =
     (DM.filterWithKey (\k _ -> S.member (mkSome k) reachableIds) mp)
   where
     reachableIds :: S.Set (Some (NonTerminalId m))
-    reachableIds = todo_
+    reachableIds = dfs S.empty (mkSome n)
+
+    dfs :: S.Set (Some (NonTerminalId m)) -> Some (NonTerminalId m) -> S.Set (Some (NonTerminalId m))
+    dfs seen nid
+      | S.member nid seen = S.empty
+      | otherwise =
+          withSome
+            nid
+            (\nid' -> S.insert nid (gatherIdsFromNonTerminal (S.insert nid seen) (mp ! nid')))
+      where
+        gatherIdsFromNonTerminal :: forall c. S.Set (Some (NonTerminalId m)) -> DGNFNonTerminal m ctx t c -> S.Set (Some (NonTerminalId m))
+        gatherIdsFromNonTerminal seen' (DGNFNonTerminal m _) =
+          DM.foldrWithKey (\_ p rest -> S.union (gatherIdsFromProd seen' p) rest) S.empty m
+        gatherIdsFromProd :: forall b c. S.Set (Some (NonTerminalId m)) -> DGNFProd m b c -> S.Set (Some (NonTerminalId m))
+        gatherIdsFromProd seen' (DGNFProd ntseq _) = gatherIdsFromNTSeq seen' ntseq
+        gatherIdsFromNTSeq :: forall c. S.Set (Some (NonTerminalId m)) -> DGNFNTSeq m c -> S.Set (Some (NonTerminalId m))
+        gatherIdsFromNTSeq _ (Nil _) = S.empty
+        gatherIdsFromNTSeq seen' (Cons m ms _) = S.union (dfs seen' (mkSome m)) (gatherIdsFromNTSeq seen' ms)
 
 {-
 data NF :: [Type] -> (Type -> Type) -> Type where
